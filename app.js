@@ -321,11 +321,10 @@ function pFinish(){
 }
 function openFinish(s,r){
  const on=!!S.actions['act:listen:'+s.id];
- openSheet(`<span class="eyebrow">Finished \u00b7 ${s.title}</span><h3 style="font-size:23px;margin:6px 0 12px" data-testid="listen-take">${s.moral}</h3>
+ openSheet(`${r&&r.newTrait?`<p class="eyebrow" style="text-align:center">New trait card unlocked</p><div style="max-width:150px;margin:0 auto 14px">${traitCard(r.newTrait,true)}</div>`:''}<span class="eyebrow">Finished \u00b7 ${s.title}</span><h3 style="font-size:23px;margin:6px 0 12px" data-testid="listen-take">${s.moral}</h3>
   <p class="eyebrow" style="color:var(--coral)">Try this today</p><p style="font-size:15.5px;line-height:1.45;margin:6px 0 14px">${s.action}</p>
   <button class="bigcheck ${on?'ok':''}" data-a="listendone" data-id="${s.id}">${ic('check')}<span>${on?'Done \u2713':'Done'}</span></button>
   <div style="display:flex;gap:10px;margin-top:12px"><button class="btn ghost sm" data-a="share" data-id="${s.id}" style="flex:1">${ic('share')}Share</button><button class="btn sm" data-a="closesheet" style="flex:1">Close</button></div>`);
- if(r&&r.newTrait)setTimeout(()=>{showTrait(r.newTrait)},0);
 }
 function pToggle(){if(A.paused){const pr=A.play();if(pr&&pr.catch)pr.catch(()=>{})}else A.pause()}
 function pSeekTotal(t){
