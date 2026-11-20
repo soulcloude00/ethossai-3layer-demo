@@ -230,3 +230,4 @@ input.txt:focus{border-color:var(--amber)}
 .demo-tools .btn{margin-top:8px}
 
 .hasmini .scroll{padding-bottom:96px}
+#app{position:absolute;inset:0}
