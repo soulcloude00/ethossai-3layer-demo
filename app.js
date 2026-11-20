@@ -32,7 +32,9 @@ const TRAITS={
  kite:{name:'Own String',line:'You fly your own kite, not theirs.',tag:'READ · IDENTITY',img:'img/trait_raw1.webp'},
  well:{name:'Deep Digger',line:'You stay in one hole until water shows up.',tag:'LISTEN · FOCUS',img:'img/trait_raw2.webp'},
  listener:{name:'The Listener',line:'You ask before you guess.',tag:'WATCH · FOUNDERS',img:'img/ep/e1endB.webp'},
- talker:{name:'Straight Talker',line:'You say it clearly and kindly.',tag:'WATCH · LOVE',img:'img/ep/e2endB.webp'}
+ pause:{name:'Pause Keeper',line:'You let wants cool off before they cost you.',tag:'WATCH · MONEY',img:'img/ep/e2endB.webp'},
+ voice:{name:'Brave Voice',line:'You speak up for what you need.',tag:'WATCH · SPEAKING',img:'img/ep/e3endB.webp'},
+ steady:{name:'Steady Hand',line:'You let the first try be a try.',tag:'WATCH · CALM',img:'img/ep/e4endB.webp'}
 };
 const EPS=[
 {id:'e1',title:'The Night Market',series:'Founders',thumb:'img/ep/e1a.webp',xp:40,trait:'listener',stats:['Hustle','Kindness'],
@@ -52,22 +54,51 @@ const EPS=[
    beats:[{t:'He cut the price in half. A few bags sold.'},{who:'Kofi',t:'Cheap didn\u2019t help. They still don\u2019t know why they need it.'},{t:'He paid the rent, just. A lower price rarely fixes a bigger question.'}]},
   {label:'Ask ten visitors what they need',title:'Listen first, then build',why:'Questions find the real reason people hesitate.',img:'e1endB',
    beats:[{t:'He asked ten visitors. Seven said the same thing.'},{who:'Arjun',t:'They want to see it survive the rain!'},{t:'Kofi poured water on a bag. A crowd gathered, and the stall sold out.'},{t:'Asking cost him one evening. It showed him what people needed.'}]}]},
-{id:'e2',title:'So\u2026 What Are We?',series:'Love',thumb:'img/ep/e2a.webp',xp:35,trait:'talker',stats:['Courage','Calm'],
- hook:'Two weeks of texting. Now the replies are slowing down.',
- take:'You\u2019re allowed to ask where things stand.',
- action:'Send one clear, kind message you\u2019ve been overthinking.',
- small:'Write that message in your notes app. You don\u2019t have to send it.',
+{id:'e2',title:'The Cart',series:'Money',thumb:'img/ep/e2a.webp',xp:35,trait:'pause',stats:['Discipline'],
+ hook:'Payday. Eleven things in her cart. One hill trip.',
+ take:'A pause turns wants into choices.',
+ action:'Put one thing in your cart on a 24-hour pause.',
  act1:[
-  {img:'e2a',k:'',t:'Tara and Rohan matched two weeks ago. They texted every single day.'},
-  {img:'e2a',k:'k2',t:'Lately, his replies came slower. One word. A meme. Then nothing till night.'},
-  {img:'e2b',k:'',who:'Zoya',t:'So\u2026 what are you two?'},
-  {img:'e2b',k:'k3',t:'Tara didn\u2019t know.'}],
- prompt:'Not knowing is getting loud. Tara decides to:',
+  {img:'e2a',k:'',t:'Payday. By lunch, Zoya had eleven things in her cart.'},
+  {img:'e2a',k:'k2',t:'Each one felt like a reward for a long week.'},
+  {img:'e2a',k:'k3',t:'Then a text from her friend: hill trip next month. You in?'},
+  {img:'e2a',k:'k2',t:'Her balance could cover one or the other. Not both.'}],
+ prompt:'Payday. Zoya decides to:',
  options:[
-  {label:'Ask him straight',title:'Clear beats clever',why:'A clear question gets a clear answer, even if it\u2019s not the one you hoped for.',img:'e2endA',
-   beats:[{t:'She typed: \u201cI like talking to you. Are we looking for the same thing?\u201d'},{who:'Rohan',t:'Honestly, I\u2019m not sure yet.'},{t:'It stung. But now she knew.'}]},
-  {label:'Match his pace',title:'Slow and steady',why:'Matching their pace protects your energy while you find out more.',img:'e2endB',
-   beats:[{t:'She stopped waiting by the phone and slowed down too.'},{t:'When they met for chai, they talked about it face to face.'}]}]}
+  {label:'Checkout now, plan later',title:'Bought it, learned from it',why:'Buying, then noticing how it feels, teaches fast and sticks.',img:'e2endA',
+   beats:[{t:'She bought it all. By Friday the glow had faded.'},{t:'She resold two things, and started a jar for the trip.'}]},
+  {label:'Wait 24 hours before buying',title:'The two things that mattered',why:'A one-day pause lets the real wants stand out.',img:'e2endB',
+   beats:[{t:'She waited a day. Nine things stopped mattering.'},{t:'She kept two, and the rest went into a jar for the trip.'}]}]},
+{id:'e3',title:'The Group Project',series:'Speaking',thumb:'img/ep/e3a.webp',xp:35,trait:'voice',stats:['Courage','Calm'],
+ hook:'Her partner is sick. The slides are hers now. So is the microphone.',
+ take:'Speak up for what you need.',
+ action:'Ask for one small thing you need today, out loud.',
+ act1:[
+  {img:'e3a',k:'',t:'Presentation day. Mira\u2019s partner texted: \u201cFever. So sorry.\u201d'},
+  {img:'e3a',k:'k2',t:'The slides were hers now. So was the microphone.'},
+  {img:'e3a',k:'k3',t:'She\u2019d only practised her half. Her name was third on the list.'},
+  {img:'e3a',k:'k2',t:'She found the teacher before class, heart racing.'}],
+ prompt:'Third on the list. Mira decides to:',
+ options:[
+  {label:'Present it alone',title:'Two halves, one voice',why:'Stepping up when it\u2019s messy shows you can handle more than you think.',img:'e3endA',
+   beats:[{t:'She presented both halves and lost her place twice.'},{t:'The class clapped anyway. She had done it.'}]},
+  {label:'Ask to swap to next week',title:'Asking is brave too',why:'Asking for what you need gives you the time to shine.',img:'e3endB',
+   beats:[{t:'She asked to swap, and the teacher said yes.'},{t:'A week of practice calls later, she gave her best talk of the term.'}]}]},
+{id:'e4',title:'The First Commission',series:'Calm',thumb:'img/ep/e4a.webp',xp:35,trait:'steady',stats:['Calm','Hustle'],
+ hook:'Someone wants to pay for her drawing. Now every line feels heavy.',
+ take:'Let the first try be a try.',
+ action:'Do a rough, two-minute version of something you\u2019ve been putting off.',
+ act1:[
+  {img:'e4a',k:'',t:'A message: \u201cI love your drawings. Could I pay you to draw my dog?\u201d'},
+  {img:'e4a',k:'k2',t:'Leela said yes. Then she froze.'},
+  {img:'e4a',k:'k3',t:'Now every line felt heavy. What if it wasn\u2019t good enough?'},
+  {img:'e4a',k:'k2',t:'She had erased the same ear five times.'}],
+ prompt:'The pressure is on. Leela decides to:',
+ options:[
+  {label:'Draw it in one sitting',title:'Exactly his ear',why:'Pushing through in one go keeps overthinking out of the way.',img:'e4endA',
+   beats:[{t:'She made tea and drew straight through. One ear came out wonky.'},{who:'Owner',t:'That\u2019s exactly his ear!'}]},
+  {label:'Sketch three rough versions',title:'The third one had life',why:'Low-stakes drafts let the good version find you.',img:'e4endB',
+   beats:[{t:'She drew three quick, messy versions just for herself.'},{t:'The third one had life in it. She painted that one.'}]}]}
 ];
 const SOON_READ=['The Notification Monk','Two Porters','Echo Valley','The Lantern Carrier','The Mirror Auto'];
 const SOON_LISTEN=['The Gulmohar and the Banyan','The Last Seat in the Metro','The Painter Who Waited'];
@@ -183,7 +214,7 @@ function lookPanel(edit){
 
 /* ---------- Today ---------- */
 function viewToday(){
- const i=dayIdx(),rd=STORIES[i],ls=STORIES[1-i],ep=EPS[i],d=TD();
+ const i=dayIdx(),rd=STORIES[i],ls=STORIES[1-i],ep=EPS[((S.offset%EPS.length)+EPS.length)%EPS.length],d=TD();
  const n=['read','listen','watch'].filter(k=>d[k]).length,all=n===3;
  const dateLbl=dayAt(S.offset).toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short'});
  const task=(layer,ic_,kind,title,sub,img)=>`<button class="card task ${d[layer]?'done':''}" data-a="open" data-layer="${layer}" data-id="${layer==='watch'?ep.id:layer==='read'?rd.id:ls.id}">
