@@ -26,6 +26,7 @@ const I={
 };
 const ic=(n,c='')=>`<svg class="i ${c}" viewBox="0 0 24 24" aria-hidden="true">${I[n]}</svg>`;
 const icf=n=>ic(n,'f');
+const backBtn=(cls='')=>`<button class="backb ${cls}" data-a="closeov" data-testid="back" aria-label="Back">${ic('back')}<span>Back</span></button>`;
 
 /* ---------- content ---------- */
 const TRAITS={
@@ -34,6 +35,7 @@ const TRAITS={
  listener:{name:'The Listener',line:'You ask before you guess.',tag:'WATCH · FOUNDERS',img:'img/ep/e1endB.webp'},
  pause:{name:'Pause Keeper',line:'You let wants cool off before they cost you.',tag:'WATCH · MONEY',img:'img/ep/e2endB.webp'},
  voice:{name:'Brave Voice',line:'You speak up for what you need.',tag:'WATCH · SPEAKING',img:'img/ep/e3endB.webp'},
+ talker:{name:'Straight Talker',line:'You say it clearly and kindly.',tag:'WATCH · LOVE · 18+',img:'img/ep/e5endB.webp',adult:true},
  steady:{name:'Steady Hand',line:'You let the first try be a try.',tag:'WATCH · CALM',img:'img/ep/e4endB.webp'}
 };
 const EPS=[
@@ -99,21 +101,43 @@ const EPS=[
    beats:[{t:'She made tea and drew straight through. One ear came out wonky.'},{who:'Owner',t:'That\u2019s exactly his ear!'}]},
   {label:'Sketch three rough versions',title:'The third one had life',why:'Low-stakes drafts let the good version find you.',img:'e4endB',
    beats:[{t:'She drew three quick, messy versions just for herself.'},{t:'The third one had life in it. She painted that one.'}]}]}
+,
+{id:'e5',title:'So\u2026 What Are We?',series:'Love',adult:true,thumb:'img/ep/e5a.webp',xp:35,trait:'talker',stats:['Courage','Calm'],
+ hook:'Two weeks of texting. Now the replies are slowing down.',
+ take:'You\u2019re allowed to ask where things stand.',
+ action:'Send one clear, kind message you\u2019ve been overthinking.',
+ act1:[
+  {img:'e5a',k:'',t:'Tara and Rohan matched two weeks ago. They texted every single day.'},
+  {img:'e5a',k:'k2',t:'Lately, his replies came slower. One word. A meme. Then nothing till night.'},
+  {img:'e5b',k:'',who:'Zoya',t:'So\u2026 what are you two?'},
+  {img:'e5b',k:'k3',t:'Tara didn\u2019t know.'}],
+ prompt:'Not knowing is getting loud. Tara decides to:',
+ options:[
+  {label:'Ask him straight',title:'Clear beats clever',why:'A clear question gets a clear answer, even if it\u2019s not the one you hoped for.',img:'e5endA',
+   beats:[{t:'She typed: \u201cI like talking to you. Are we looking for the same thing?\u201d'},{who:'Rohan',t:'Honestly, I\u2019m not sure yet.'},{t:'It stung. But now she knew.'}]},
+  {label:'Match his pace',title:'Slow and steady',why:'Matching their pace protects your energy while you find out more.',img:'e5endB',
+   beats:[{t:'She stopped waiting by the phone and slowed down too.'},{t:'When they met for chai, they talked about it face to face.'}]}]}
 ];
 const SOON_READ=['The Notification Monk','Two Porters','Echo Valley','The Lantern Carrier','The Mirror Auto'];
 const SOON_LISTEN=['The Gulmohar and the Banyan','The Last Seat in the Metro','The Painter Who Waited'];
-const MODES=[{id:'gym',n:'Gym',s:1.25,d:'1.25\u00d7 pace'},{id:'run',n:'Jogging',s:1,d:'Steady 1\u00d7'},{id:'com',n:'Commute',s:1,d:'Sleep timer ready'}];
+const MODES=[{id:'gym',n:'Gym',s:1.25,d:'A bit faster'},{id:'run',n:'Jogging',s:1,d:'Normal speed'},{id:'com',n:'Commute',s:1,d:'Normal speed'}];
 const SKIN=['#fbe0cc','#f1c39d','#dca37a','#b87850','#8e5a38','#5c3a22'];
 const HOOD=['#22386a','#F2B544','#f3ead6','#2f8f8a','#e8798a','#5b3f87'];
 const LEVELS=[['Spark',0,100],['Ember',100,250],['Flame',250,500],['Beacon',500,900]];
 
 /* ---------- state ---------- */
-const fresh=()=>({onboarded:false,name:'',age:'',av:{g:'girl',skin:SKIN[2],hoodie:HOOD[1]},xp:0,offset:0,done:{},daily:{},actions:{},traits:{},ep:{}});
+const fresh=()=>({onboarded:false,hint:false,name:'',age:'',av:{g:'girl',skin:SKIN[2],hoodie:HOOD[1]},xp:0,offset:0,done:{},daily:{},actions:{},traits:{},ep:{}});
 let S;try{S=Object.assign(fresh(),JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){S=fresh()}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 const dstr=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 const dayAt=o=>{const d=new Date();d.setDate(d.getDate()+o);return d};
 const today=()=>dstr(dayAt(S.offset));
+const ageN=()=>parseInt(S.age,10)||0;
+const adult=()=>ageN()>=18;
+const teen=()=>ageN()>=14&&ageN()<18;
+const visEps=()=>EPS.filter(e=>!e.adult||adult());
+const visTraits=()=>Object.keys(TRAITS).filter(k=>!TRAITS[k].adult||adult());
+const reduced=matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
 const dayIdx=()=>((S.offset%2)+2)%2;
 const TD=()=>S.daily[today()]||{};
 function streaks(){
@@ -154,12 +178,15 @@ function avatar(a,cls='avatar'){
 }
 
 /* ---------- routing ---------- */
-let tab='today',OB={step:0,edit:false},OV=null;
+let tab='today',OB={step:0,edit:false},OV=null,lastTab=null;
 const app=$('#app'),ov=$('#overlay'),sheet=$('#sheet');
 function go(t){tab=t;closeOverlay(true);render()}
 function openOverlay(o){OV=o;renderOverlay();updateMini()}
 function closeOverlay(silent){
- OV=null;ov.classList.remove('show');ov.innerHTML='';if(!silent){render()}updateMini();
+ const had=ov.classList.contains('show');OV=null;
+ if(had&&!reduced){ov.classList.add('out');setTimeout(()=>{if(!OV){ov.classList.remove('show','out');ov.innerHTML=''}},190)}
+ else{ov.classList.remove('show','out');ov.innerHTML=''}
+ if(!silent){render()}updateMini();
 }
 function openSheet(html){sheet.innerHTML=`<div class="pane">${html}</div>`;sheet.classList.add('show')}
 function closeSheet(){sheet.classList.remove('show');sheet.innerHTML=''}
@@ -169,37 +196,45 @@ function render(){
  if(!S.onboarded){app.innerHTML=viewOnboarding();return}
  const l=level(),st=streaks();
  const body={today:viewToday,read:viewRead,listen:viewListen,watch:viewWatch,you:viewYou}[tab]();
- const nav=[['today','home','Today'],['read','book','Read'],['listen','head','Listen'],['watch','film','Watch'],['you','user','You']]
+ const nav=[['today','home','Today'],['read','book','Swipe'],['listen','head','Listen'],['watch','film','Watch'],['you','user','Me']]
   .map(([k,i,n])=>`<button data-a="go" data-v="${k}" class="${tab===k?'on':''}" aria-label="${n}" ${tab===k?'aria-current="page"':''}>${ic(i)}<span>${n}</span></button>`).join('');
  app.innerHTML=`<div class="screen" data-tab="${tab}">
   <div class="top"><span class="brand">Ethos<b>SAI</b></span><span class="demo">DEMO</span><span class="sp"></span>
   <span class="chip" title="Streak">${ic('flame')}${st.cur}</span></div>
-  <div class="scroll" id="scroll">${body}</div>
-  <nav class="nav">${nav}</nav></div>`;
- updateMini();
+  <div class="scroll ${tab!==lastTab&&!reduced?'enter':''}" id="scroll">${body}</div>
+  <nav class="nav" aria-label="Main">${nav}</nav></div>`;
+ lastTab=tab;updateMini();
 }
 
 /* ---------- onboarding ---------- */
+function ageMsg(v){
+ const n=parseInt(v,10);
+ if(!v)return{html:'',ok:false};
+ if(isNaN(n)||n>99)return{html:'<div class="note warn">Please type your real age, like 16.</div>',ok:false};
+ if(n<14)return{html:'<div class="note warn" data-testid="under14">Sorry, EthosSAI is for ages 14 and up. Please come back when you turn 14. We will be here for you!</div>',ok:false};
+ if(n<18)return{html:'<div class="note good" data-testid="teen-note">Thanks! Teen-safe mode will be on. It hides stories meant for 18 and up.</div>',ok:true};
+ return{html:'<div class="note good">Thanks! You will see all the stories.</div>',ok:true};
+}
 function viewOnboarding(){
  const s=OB.step;
- const bars=`<div class="steps">${s>0?`<button data-a="obback" aria-label="Back">${ic('back')}</button>`:''}${[0,1,2].map(i=>`<i class="${i<=s?'on':''}"></i>`).join('')}</div>`;
- if(s===0)return`<div class="ob" data-ob="0">${bars}
+ const top=`<div class="steps">${s>0?`<button class="backb" data-a="obback" data-testid="ob-back" aria-label="Back">${ic('back')}<span>Back</span></button>`:''}<span class="sp"></span>${s!==1?`<button class="skipb" data-a="obskip" data-testid="skip">Skip</button>`:''}</div>
+ <div class="dotsrow" aria-hidden="true">${[0,1,2].map(i=>`<i class="${i<=s?'on':''}"></i>`).join('')}</div><p class="mute stepn">Step ${s+1} of 3</p>`;
+ if(s===0)return`<div class="ob" data-ob="0">${top}
   <p class="eyebrow">EthosSAI \u00b7 Demo</p>
-  <h1 class="hero-h" style="margin-top:8px">A swipeable story, one tiny action, and you\u2019re <em>done for today.</em></h1>
-  <div class="fan"><img src="img/fan1.webp" alt=""><img src="img/ep/e2endB.webp" alt=""><img src="img/fan3.webp" alt=""><span>READ</span><span>WATCH</span><span>LISTEN</span></div>
-  <p class="mute" style="font-size:15px;line-height:1.5;margin-bottom:auto">Read it, listen to it, or watch it. Then do one real thing. Made for 18+.</p>
+  <h1 class="hero-h" style="margin-top:4px">A swipeable story, one tiny action, and you\u2019re <em>done for today.</em></h1>
+  <div class="fan"><img src="img/fan1.webp" alt=""><img src="img/ep/e2endB.webp" alt=""><img src="img/fan3.webp" alt=""><span>SWIPE</span><span>WATCH</span><span>LISTEN</span></div>
+  <p class="mute" style="font-size:16px;line-height:1.5;margin-bottom:auto">Swipe it, listen to it, or watch it. Then do one small thing for real. For ages 14 and up.</p>
   <button class="btn" data-a="obnext" data-testid="start">Start</button>
-  <p class="mute" style="font-size:11.5px;text-align:center;margin-top:10px">Demo with sample content. Your data stays on this device.</p></div>`;
- if(s===1)return`<div class="ob" data-ob="1">${bars}${lookPanel(false)}</div>`;
- const ok=S.age&&OB.adult;
- return`<div class="ob" data-ob="2">${bars}
-  <h1 class="hero-h" style="font-size:30px;margin-bottom:18px">Two quick checks</h1>
-  <p class="lbl" style="margin-top:0">Your age</p>
-  <div class="agechips">${['18\u201319','20\u201322','23\u201325','26+'].map(a=>`<button data-a="age" data-v="${a}" class="${S.age===a?'on':''}">${a}</button>`).join('')}</div>
-  <button class="opt ${OB.adult?'on':''}" data-a="adult" data-testid="adult"><span class="ring">${ic('check')}</span>I\u2019m 18 or older.</button>
-  <p class="mute" style="font-size:13px;line-height:1.5;margin-top:6px">EthosSAI is for adults. This demo stores your choices only in this browser.</p>
+  <p class="mute small" style="text-align:center;margin-top:10px">This is a demo with sample stories. Your choices stay on this phone.</p></div>`;
+ if(s===1){const m=ageMsg(S.age);return`<div class="ob" data-ob="1">${top}
+  <h1 class="hero-h" style="font-size:30px;margin-bottom:8px">How old are you?</h1>
+  <p class="mute" style="font-size:16px;line-height:1.5;margin-bottom:14px">We ask so we can show the right stories for you.</p>
+  <label class="lbl" for="age" style="margin-top:0">Your age</label>
+  <input class="txt" id="age" data-testid="age" type="number" inputmode="numeric" min="14" max="99" placeholder="Type your age" value="${S.age||''}" autocomplete="off">
+  <div id="agemsg" role="status" aria-live="polite">${m.html}</div>
   <div style="margin-top:auto"></div>
-  <button class="btn" data-a="obdone" data-testid="finish" ${ok?'':'disabled'}>Go to Today</button></div>`;
+  <button class="btn" id="agebtn" data-a="obnext" data-testid="age-next" ${m.ok?'':'disabled'}>Next</button></div>`}
+ return`<div class="ob" data-ob="2">${top}${lookPanel(false)}</div>`;
 }
 function lookPanel(edit){
  const a=S.av;
@@ -209,78 +244,80 @@ function lookPanel(edit){
  <p class="lbl" style="margin-top:0">Skin</p><div class="sw">${SKIN.map(c=>`<button data-a="skin" data-v="${c}" style="background:${c}" class="${a.skin===c?'on':''}" aria-label="Skin ${c}"></button>`).join('')}</div>
  <p class="lbl">Hoodie</p><div class="sw">${HOOD.map(c=>`<button data-a="hood" data-v="${c}" style="background:${c}" class="${a.hoodie===c?'on':''}" aria-label="Hoodie ${c}"></button>`).join('')}</div>
  <p class="lbl">What should we call you?</p><input class="txt" id="nm" maxlength="16" placeholder="Your name" value="${S.name.replace(/"/g,'&quot;')}" autocomplete="off">
- <div style="margin-top:auto;padding-top:14px"><button class="btn" data-a="${edit?'looksave':'obnext'}" data-testid="look-next">${edit?'Save':'Continue'}</button></div>`;
+ <div style="margin-top:auto;padding-top:14px"><button class="btn" data-a="${edit?'looksave':'obdone'}" data-testid="${edit?'look-save':'finish'}">${edit?'Save':'Finish'}</button></div>`;
 }
 
 /* ---------- Today ---------- */
 function viewToday(){
- const i=dayIdx(),rd=STORIES[i],ls=STORIES[1-i],ep=EPS[((S.offset%EPS.length)+EPS.length)%EPS.length],d=TD();
+ const i=dayIdx(),rd=STORIES[i],ls=STORIES[1-i],ep=visEps()[((S.offset%visEps().length)+visEps().length)%visEps().length],d=TD();
  const n=['read','listen','watch'].filter(k=>d[k]).length,all=n===3;
  const dateLbl=dayAt(S.offset).toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short'});
  const task=(layer,ic_,kind,title,sub,img)=>`<button class="card task ${d[layer]?'done':''}" data-a="open" data-layer="${layer}" data-id="${layer==='watch'?ep.id:layer==='read'?rd.id:ls.id}">
   <div class="th"><img src="${img}" alt=""></div><div class="tb"><span class="kind">${ic(ic_)}${kind}</span><h3>${title}</h3><small>${sub}</small></div>${d[layer]?`<span class="tick">${ic('check')}</span>`:''}</button>`;
  const act=(layer,key,txt)=>{const unlocked=!!d[layer],on=!!S.actions[key];return`<button class="act ${on?'on':''} ${unlocked?'':'lock'}" data-a="act" data-key="${key}" ${unlocked?'':'disabled'}>
-  <span class="cb">${ic('check')}</span><div><small>${layer==='read'?'After you read':layer==='listen'?'After you listen':'After you watch'}</small><p>${unlocked?txt:'Unlocks when you finish the '+layer.replace('watch','episode')+'.'}</p></div></button>`};
+  <span class="cb">${ic('check')}</span><div><small>${layer==='read'?'After you swipe':layer==='listen'?'After you listen':'After you watch'}</small><p>${unlocked?txt:'Finish the '+({read:'story',listen:'audio story',watch:'episode'})[layer]+' to unlock this.'}</p></div></button>`};
  return`<p class="mute" style="font-size:13px">${dateLbl}</p>
  <h1 class="h-title" style="margin-top:2px">Hey ${S.name||'there'}, here\u2019s today.</h1>
- <div class="ringrow"><div class="prog"><i style="width:${n/3*100}%"></i></div><b style="color:var(--amber)">${n}/3</b></div>
- ${task('read','book','Read \u00b7 3 min',rd.title,'Swipe 10 cards',rd.hero)}
- ${task('listen','head','Listen \u00b7 2 min',ls.title,'Narrated, with sleep timer',ls.hero)}
- ${task('watch','film','Watch & act \u00b7 1 min',ep.title,ep.series+' \u00b7 your choice, no wrong answers',ep.thumb)}
- <p class="sec-t">Today\u2019s tiny actions</p>
+ ${teen()?`<p class="note good" style="margin:10px 0 0" data-testid="teen-banner">${ic('lock')}<span>Teen-safe mode is on. Stories for 18 and up are hidden.</span></p>`:''}
+ <div class="ringrow"><div class="prog"><i style="width:${n/3*100}%"></i></div><b style="color:var(--amber)">${n} of 3 done</b></div>
+ ${task('read','book','Swipe \u00b7 3 min',rd.title,'10 cards to swipe',rd.hero)}
+ ${task('listen','head','Listen \u00b7 2 min',ls.title,'Audio story with sleep timer',ls.hero)}
+ ${task('watch','film','Watch \u00b7 1 min',ep.title,ep.series+' \u00b7 you choose, no wrong answer',ep.thumb)}
+ <p class="sec-t">Your small actions for today</p>
  ${act('read','act:read:'+rd.id,rd.action)}${act('listen','act:listen:'+ls.id,ls.action)}${act('watch','act:watch:'+ep.id,ep.action)}
  <div class="end ${all?'done':''}" data-testid="feed-end">${ic('moon')}
   <h3>${all?'You\u2019re done for today.':'This feed has an end.'}</h3>
-  <p class="mute" style="font-size:14px;line-height:1.5">${all?'Nice. Put the phone down and go do your tiny action. Fresh picks tomorrow.':'Three things, then you\u2019re free. Nothing below this line is built to keep you scrolling.'}</p></div>`;
+  <p class="mute" style="font-size:14px;line-height:1.5">${all?'Nice work. Put your phone down and do your small action. New picks come tomorrow.':'Do these three, then you\u2019re free. Nothing below this line will keep you scrolling.'}</p></div>`;
 }
 
 /* ---------- Read ---------- */
 function viewRead(){
- return`<h1 class="h-title" style="margin-top:6px">Read &amp; swipe</h1><p class="mute" style="margin:6px 0 16px;font-size:14.5px;line-height:1.45">Short stories as swipeable cards. Each ends with one tiny action.</p>
- ${STORIES.map(s=>`<button class="card lib" data-a="open" data-layer="read" data-id="${s.id}"><img src="${s.hero}" alt=""><div><span class="eyebrow">${s.tag}</span><h3>${s.title}</h3><span class="meta">10 cards \u00b7 ~${s.mins} min ${S.done['read:'+s.id]?'\u00b7 <b style="color:var(--amber)">Read</b>':''}</span></div></button>`).join('')}
+ return`<h1 class="h-title" style="margin-top:6px">Swipe a story</h1><p class="mute" style="margin:6px 0 16px;font-size:16px;line-height:1.5">Short stories on cards. Each one ends with one small thing to do.</p>
+ ${STORIES.map(s=>`<button class="card lib" data-a="open" data-layer="read" data-id="${s.id}"><img src="${s.hero}" alt=""><div><span class="eyebrow">${s.tag}</span><h3>${s.title}</h3><span class="meta">10 cards \u00b7 about ${s.mins} min ${S.done['read:'+s.id]?'\u00b7 <b style="color:var(--amber)">Done</b>':''}</span></div></button>`).join('')}
  <p class="sec-t">Coming soon</p>${SOON_READ.map(t=>`<div class="soon">${ic('lock')}${t}</div>`).join('')}`;
 }
 /* ---------- Listen ---------- */
 function viewListen(){
- return`<h1 class="h-title" style="margin-top:6px">Listen</h1><p class="mute" style="margin:6px 0 14px;font-size:14.5px;line-height:1.45">Hands-free stories for the gym, a run or the metro.</p>
+ return`<h1 class="h-title" style="margin-top:6px">Listen</h1><p class="mute" style="margin:6px 0 14px;font-size:16px;line-height:1.5">Stories to hear at the gym, on a run or on the bus.</p>
  <div class="modes">${MODES.map(m=>`<button data-a="mode" data-v="${m.id}" class="${(S.mode||'com')===m.id?'on':''}"><span>${m.n}</span><small>${m.d}</small></button>`).join('')}</div>
- ${STORIES.map(s=>{const tot=s.chapters.reduce((a,c)=>a+c.dur,0);return`<button class="card lib" data-a="open" data-layer="listen" data-id="${s.id}"><img src="${s.hero}" alt=""><div><span class="eyebrow">Audiobook \u00b7 10 chapters</span><h3>${s.title}</h3><span class="meta">${fmt(tot)} \u00b7 Indian-English voice ${S.done['listen:'+s.id]?'\u00b7 <b style="color:var(--amber)">Heard</b>':''}</span></div></button>`}).join('')}
- <p class="mute" style="font-size:12px;margin-top:2px">Narration is AI-generated (sample voice).</p>
+ ${STORIES.map(s=>{const tot=s.chapters.reduce((a,c)=>a+c.dur,0);return`<button class="card lib" data-a="open" data-layer="listen" data-id="${s.id}"><img src="${s.hero}" alt=""><div><span class="eyebrow">Audio story \u00b7 10 chapters</span><h3>${s.title}</h3><span class="meta">${fmt(tot)} \u00b7 Indian-English voice ${S.done['listen:'+s.id]?'\u00b7 <b style="color:var(--amber)">Heard</b>':''}</span></div></button>`}).join('')}
+ <p class="mute" style="font-size:13px;margin-top:2px">The voice is made by AI (a sample voice).</p>
  <p class="sec-t">Coming soon</p>${SOON_LISTEN.map(t=>`<div class="soon">${ic('lock')}${t}</div>`).join('')}`;
 }
 /* ---------- Watch ---------- */
 function viewWatch(){
- return`<h1 class="h-title" style="margin-top:6px">Watch &amp; act</h1><p class="mute" style="margin:6px 0 16px;font-size:14.5px;line-height:1.45">1-minute anime episodes. You choose. Both paths teach something.</p>
- ${EPS.map(e=>`<button class="card lib" data-a="open" data-layer="watch" data-id="${e.id}"><img src="${e.thumb}" alt=""><div><span class="eyebrow">${e.series}</span><h3>${e.title}</h3><span class="meta">${e.hook}</span><div class="pillrow" style="margin-top:6px"><span class="pill">+${e.xp} XP</span>${S.done['watch:'+e.id]?'<span class="pill" style="color:var(--amber)">Watched</span>':''}</div></div></button>`).join('')}
- <p class="mute" style="font-size:12px">Episodes are motion comics with generated stills, not video.</p>`;
+ return`<h1 class="h-title" style="margin-top:6px">Watch</h1><p class="mute" style="margin:6px 0 16px;font-size:16px;line-height:1.5">1-minute anime stories. You choose what happens. There is no wrong answer.</p>
+ ${visEps().map(e=>`<button class="card lib" data-a="open" data-layer="watch" data-id="${e.id}"><img src="${e.thumb}" alt=""><div><span class="eyebrow">${e.series}</span><h3>${e.title}</h3><span class="meta">${e.hook}</span><div class="pillrow" style="margin-top:6px"><span class="pill">+${e.xp} XP</span>${e.adult?'<span class="pill">18+</span>':''}${S.done['watch:'+e.id]?'<span class="pill" style="color:var(--amber)">Watched</span>':''}</div></div></button>`).join('')}
+ <p class="mute" style="font-size:13px">These are motion comics made from AI pictures, not video.</p>`;
 }
 /* ---------- You ---------- */
 function viewYou(){
  const l=level(),st=streaks(),acts=Object.keys(S.actions).length;
  const days=[...Array(7)].map((_,k)=>{const o=S.offset-6+k,dd=dayAt(o);return`<div class="${k===6?'today':''}"><i class="${S.daily[dstr(dd)]?'on':''}">${ic('check')}</i>${'SMTWTFS'[dd.getDay()]}</div>`}).join('');
- const tr=Object.keys(TRAITS).map(k=>traitCard(k,!!S.traits[k])).join('');
- const unlocked=Object.keys(S.traits).length;
- return`<h1 class="h-title" style="margin:6px 0 14px">You</h1>
- <div class="card"><div class="pcard">${avatar(S.av)}<div style="min-width:0"><h2 style="font-size:24px;font-weight:800">${S.name||'You'}</h2><p class="mute" style="font-size:13px;margin:2px 0 8px">Age ${S.age||'18+'} \u00b7 ${l.n}</p><button class="link" data-a="editlook">Edit look</button></div></div>
+ const tr=visTraits().map(k=>traitCard(k,!!S.traits[k])).join('');
+ const unlocked=visTraits().filter(k=>S.traits[k]).length;
+ return`<h1 class="h-title" style="margin:6px 0 14px">Me</h1>
+ <div class="card"><div class="pcard">${avatar(S.av)}<div style="min-width:0"><h2 style="font-size:24px;font-weight:800">${S.name||'You'}</h2><p class="mute" style="font-size:14px;margin:2px 0 8px">Age ${S.age} \u00b7 ${l.n}</p><button class="link" data-a="editlook">Edit look</button></div></div>
   <p style="margin:16px 0 8px;font-weight:700;font-size:15px">${l.n} \u00b7 <span id="xpv">${S.xp}</span> / ${l.hi} XP</p><div class="prog"><i style="width:${l.p}%"></i></div></div>
  <div class="card" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:17px">Streak</b><span class="chip" data-testid="streak">${ic('flame')}${st.cur}-day streak</span></div>
   <div class="week">${days}</div>
-  <div class="stat"><div><b>${st.cur}</b><span>Current</span></div><div><b>${st.best}</b><span>Best</span></div><div><b>${acts}</b><span>Tiny actions done</span></div></div></div>
- <p class="sec-t">Trait cards \u00b7 ${unlocked} of ${Object.keys(TRAITS).length}</p>
+  <div class="stat"><div><b>${st.cur}</b><span>Current</span></div><div><b>${st.best}</b><span>Best</span></div><div><b>${acts}</b><span>Actions done</span></div></div></div>
+ <p class="sec-t">Trait cards \u00b7 ${unlocked} of ${visTraits().length}</p>
  <div class="tgrid" data-testid="traits">${tr}</div>
- <p class="mute" style="font-size:12.5px;margin-top:10px;line-height:1.45">Finish a story, an audiobook or an episode to unlock its card. No fake leaderboards here.</p>
- <div class="demo-tools"><b style="color:var(--cream)">Demo tools</b><br>Explore a second day of streaks and fresh picks, or start over.
+ <p class="mute" style="font-size:13px;margin-top:10px;line-height:1.45">Finish a story, an audio story or an episode to unlock its card.</p>
+ ${teen()?`<p class="note good" style="margin-top:12px" data-testid="teen-me">${ic('lock')}<span><b>Teen-safe mode is on.</b> You are under 18, so stories for 18 and up (like Love) are hidden.</span></p>`:''}
+ <div class="demo-tools"><b style="color:var(--cream)">Demo tools</b><br>See a second day of streaks and new picks, or start over.
   <button class="btn ghost sm" data-a="nextday">Simulate next day</button><button class="btn ghost sm" data-a="reset" style="border-color:rgba(255,255,255,.25);color:var(--mute)">Reset demo</button></div>`;
 }
 function traitCard(k,on,big){const t=TRAITS[k];return`<div class="trait ${on?'':'lock'} ${big?'big':''}" data-trait="${k}"><img src="${t.img}" alt=""><span class="tag">${on?t.tag:'LOCKED'}</span>${on?'':`<span class="lk">${ic('lock')}</span>`}<div class="tt"><b>${on?t.name:'???'}</b><span>${on?t.line:'Keep going to unlock.'}</span></div></div>`}
 
 /* ---------- overlays ---------- */
 function renderOverlay(){
- if(!OV)return;ov.classList.add('show');
+ if(!OV)return;ov.classList.remove('out');ov.classList.add('show');
  if(OV.type==='reader')return renderReader();
  if(OV.type==='player')return renderPlayer();
  if(OV.type==='ep')return renderEp();
- if(OV.type==='look'){ov.innerHTML=`<div class="ob" style="height:100%"><div class="steps"><button data-a="closeov" aria-label="Close">${ic('x')}</button></div>${lookPanel(true)}</div>`}
+ if(OV.type==='look'){ov.innerHTML=`<div class="ob" style="height:100%"><div class="steps">${backBtn()}</div>${lookPanel(true)}</div>`}
 }
 /* reader */
 let R;
@@ -293,17 +330,18 @@ function renderReader(){
   <span class="eyebrow" style="color:var(--coral)">Try this today</span><p style="font-size:16px;line-height:1.45;margin:6px 0 14px">${s.action}</p>
   <button class="bigcheck ${doneA?'ok':''}" data-a="readdone" data-testid="done">${ic('check')}<span>${doneA?'Done \u2713':'Done'}</span></button></div>
   <div style="display:flex;gap:10px;margin-top:12px"><button class="btn ghost sm" data-a="share" style="flex:1">${ic('share')}Share</button><button class="btn sm" data-a="closeov" style="flex:1">Back to Today</button></div>
-  <p class="mute" style="font-size:12px;text-align:center;margin-top:10px"><span class="xp" style="font-size:12px;padding:3px 10px">+${XP.read} XP</span> for finishing &middot; Illustrations are AI-generated</p></div></div>`;
- ov.innerHTML=`<div class="screen"><div class="rd-top"><button class="iconb" data-a="closeov" aria-label="Close">${ic('x')}</button><div style="flex:1;min-width:0"><span class="eyebrow">Read &middot; ${s.tag}</span><div style="font-weight:800;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.title}</div></div><b class="mute" id="cnt" style="font-size:14px"></b></div>
-  <div class="car" id="car"><div class="track" id="track">${slides}${fin}</div></div>
+  <p class="mute" style="font-size:13px;text-align:center;margin-top:10px"><span class="xp" style="font-size:13px;padding:3px 10px">+${XP.read} XP</span> for finishing &middot; Pictures are made by AI</p></div></div>`;
+ ov.innerHTML=`<div class="screen"><div class="rd-top">${backBtn()}<div style="flex:1;min-width:0"><span class="eyebrow">Swipe &middot; ${s.tag}</span><div style="font-weight:800;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.title}</div></div><b class="mute" id="cnt" style="font-size:14px"></b></div>
+  <div class="car" id="car"><div class="track" id="track">${slides}${fin}</div>${S.hint?'':`<div class="swipehint" id="hint" data-testid="swipe-hint" role="note"><div class="hand">${ic("back")}${ic("back")}</div><p>Swipe left for the next card</p></div>`}</div>
   <div class="dots" id="dots" role="tablist" aria-label="Card progress">${[...Array(R.n)].map((_,k)=>`<i></i>`).join('')}</div>
-  <p class="hint">Swipe or tap the sides</p>
+  <p class="hint">Swipe left or right, or tap the sides</p>
   <div class="rd-foot"><button class="iconb" data-a="rprev" aria-label="Previous card">${ic('back')}</button><span class="cnt" id="cnt2"></span><button class="iconb" data-a="rnext" aria-label="Next card">${ic('next')}</button></div></div>`;
  rGo(R.i);setupCar();
 }
 const XP={read:20,listen:20};
 function rGo(i){
- i=Math.max(0,Math.min(R.n-1,i));R.i=i;OV.i=i;
+ i=Math.max(0,Math.min(R.n-1,i));if(i!==R.i&&!S.hint){S.hint=true;save();const h=$('#hint');if(h){h.classList.add('gone');setTimeout(()=>h.remove(),300)}}
+ R.i=i;OV.i=i;
  const t=$('#track');if(!t)return;t.style.transform=`translateX(${-i*100}%)`;
  [...$('#dots').children].forEach((d,k)=>d.classList.toggle('on',k===i));
  const lbl=i<R.n-1?`${i+1} / ${R.n-1}`:'Takeaway';$('#cnt').textContent=lbl;$('#cnt2').textContent=lbl;
@@ -398,7 +436,7 @@ function renderPlayer(){
  if(!P||P.s.id!==s.id){const mode=MODES.find(m=>m.id===(S.mode||'com'));
   P={s,ch:0,speed:mode.s,timerLabel:'Off',eoc:false};A.pause();pLoad(0,false)}
  ov.innerHTML=`<div class="screen"><div class="pl paused">
-  <div style="display:flex;align-items:center;gap:10px"><button class="iconb" data-a="closeov" aria-label="Close player">${ic('back')}</button><span class="eyebrow" style="flex:1;text-align:center">Listen \u00b7 ${MODES.find(m=>m.id===(S.mode||'com')).n} mode</span><span style="width:42px"></span></div>
+  <div style="display:flex;align-items:center;gap:10px">${backBtn()}<span class="eyebrow" style="flex:1;text-align:center">Listen \u00b7 ${MODES.find(m=>m.id===(S.mode||'com')).n}</span><span style="width:48px"></span></div>
   <div class="cover"><img id="p-img" src="${s.chapters[P.ch].art}" alt=""></div>
   <h2>${s.title}</h2><span class="mute" id="p-ch" style="font-size:13px;font-weight:600"></span>
   <p class="cap" id="p-cap"></p>
@@ -412,7 +450,7 @@ function renderPlayer(){
  pUI();
 }
 function openChapters(){
- openSheet(`<h3>Chapters</h3>${P.s.chapters.map((c,k)=>`<button class="row ${k===P.ch?'on':''}" data-a="pgoch" data-v="${k}"><span class="n">${c.n}</span><span style="flex:1">${k===9?'The takeaway':c.text.replace(/["“”]/g,'').split(' ').slice(0,6).join(' ')+'\u2026'}</span><span class="mute" style="font-size:12px">${fmt(c.dur)}</span></button>`).join('')}`);
+ openSheet(`<h3>Chapters</h3>${P.s.chapters.map((c,k)=>`<button class="row ${k===P.ch?'on':''}" data-a="pgoch" data-v="${k}"><span class="n">${c.n}</span><span style="flex:1">${k===9?'The takeaway':c.text.replace(/["“”]/g,'').split(' ').slice(0,6).join(' ')+'\u2026'}</span><span class="mute" style="font-size:13px">${fmt(c.dur)}</span></button>`).join('')}`);
 }
 function openTimer(){
  const o=[['off','Off'],['eoc','End of chapter'],[5,'5 minutes'],[15,'15 minutes'],[30,'30 minutes']];
@@ -431,15 +469,15 @@ function epDraw(){
  const ep=E.ep,{n1,n3}=epSteps(),st=E.step;
  let part=1,view;
  const head=(p,label)=>`<div class="bars">${[1,2,3].map(k=>`<i class="${k<=p?'on':''}"></i>`).join('')}</div>
-  <div class="tl"><button class="iconb dk" data-a="closeov" aria-label="Close episode">${ic('x')}</button><div class="t"><b>${ep.series} &middot; ${ep.title}</b><span>Part ${p} of 3 &middot; ${label}</span></div></div>`;
+  <div class="tl">${backBtn('dk')}<div class="t"><b>${ep.series} &middot; ${ep.title}</b><span>Part ${p} of 3 &middot; ${label}</span></div></div>`;
  if(st<n1){const b=ep.act1[st];
-  view=`<div class="stagebox ${E.paused?'paused':''}"><img class="${b.k}" src="img/ep/${b.img}.webp" alt=""></div><div class="ui">${head(1,'The hook')}
+  view=`<div class="stagebox ${E.paused?'paused':''}"><img class="${b.k}" src="img/ep/${b.img}.webp" alt=""></div><div class="ui">${head(1,'The setup')}
    <div class="beatbox" data-a="epnext" data-testid="beat">${b.who?`<span class="speaker">${b.who}</span>`:''}<p class="bt ${b.who?'q':''}" key="${st}">${b.t}</p></div>
    <div class="foot"><p class="tapx">Tap anywhere to continue</p><button class="btn" data-a="epnext" data-testid="continue">${st===n1-1?'What would you do?':'Continue'}</button></div></div>`;
  }else if(st===n1){
   const last=ep.act1[n1-1];
   view=`<div class="stagebox dim"><img src="img/ep/${last.img}.webp" alt=""></div><div class="ui">${head(2,'Your choice')}
-   <div class="chooser" data-testid="chooser"><h2>${ep.prompt}</h2><p class="mute" style="font-size:13.5px">No wrong answers. Both paths teach something.</p>
+   <div class="chooser" data-testid="chooser"><h2>${ep.prompt}</h2><p class="mute" style="font-size:14px">There is no wrong answer. Both choices teach you something.</p>
    ${ep.options.map((o,k)=>`<button class="ch ${E.pick===k?'on':''}" data-a="epPick" data-v="${k}" data-testid="opt-${'ab'[k]}"><span class="l">${'AB'[k]}</span>${o.label}</button>`).join('')}
    <button class="btn" style="margin-top:14px" data-a="epgo" ${E.pick==null?'disabled':''} data-testid="watch-what">Watch what happens</button></div></div>`;
  }else if(st<=n1+n3){const o=ep.options[E.pick],b=o.beats[st-n1-1];
@@ -456,7 +494,7 @@ function epDraw(){
   <div class="endsc" data-testid="ep-end"><div style="text-align:center;margin:8px 0 14px"><span class="eyebrow">Episode complete &middot; ${o.title}</span>
    <div style="margin-top:8px"><span class="xp" data-testid="xp">${rr.first?'+'+ep.xp+' XP':'XP earned'}</span></div></div>
   <div class="card lesson"><span class="eyebrow">Takeaway</span><h2 data-testid="takeaway">${ep.take}</h2>
-   <span class="eyebrow" style="color:var(--coral)">Your real step</span>
+   <span class="eyebrow" style="color:var(--coral)">Your real-life step</span>
    <p style="font-size:16px;line-height:1.45;margin:6px 0 ${ep.small?'8':'14'}px" id="ep-act">${ep.action}</p>
    ${ep.small?`<button class="link" data-a="epSmall" style="margin-bottom:12px;display:block">${E.small?'Back to the full step':'Want a smaller step?'}</button>`:''}
    <button class="bigcheck ${aDone?'ok':''}" data-a="epdone" data-testid="ep-done">${ic('check')}<span>${aDone?'Done \u2713':'I\u2019ll do it'}</span></button></div>
@@ -483,14 +521,13 @@ document.addEventListener('click',e=>{
  const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,v=b.dataset.v;
  switch(a){
  case'go':go(v);break;
- case'obnext':if(OB.step===1)S.name=($('#nm')?$('#nm').value.trim():S.name);OB.step++;save();render();break;
+ case'obnext':if(OB.step===1&&!ageMsg(S.age).ok)break;OB.step++;render();break;
+ case'obskip':if(OB.step===0){OB.step=1;render()}else finishOb();break;
  case'obback':OB.step--;render();break;
  case'g':S.av.g=v;save();OB.step===1?refreshLook():refreshOvLook();break;
  case'skin':S.av.skin=v;save();OB.step===1?refreshLook():refreshOvLook();break;
  case'hood':S.av.hoodie=v;save();OB.step===1?refreshLook():refreshOvLook();break;
- case'age':S.age=v;save();render();break;
- case'adult':OB.adult=!OB.adult;render();break;
- case'obdone':if(S.age&&OB.adult){S.onboarded=true;save();tab='today';render()}break;
+ case'obdone':finishOb();break;
  case'editlook':openOverlay({type:'look'});break;
  case'looksave':S.name=$('#nm').value.trim();save();closeOverlay();break;
  case'closeov':closeOverlay();break;
@@ -527,10 +564,14 @@ document.addEventListener('click',e=>{
  case'reset':if(confirm('Reset all demo data on this device?')){A.pause();P=null;A.removeAttribute('src');S=fresh();OB={step:0};save();tab='today';closeOverlay(true);render()}break;
  }
 });
+function finishOb(){if(!ageMsg(S.age).ok){OB.step=1;render();return}const n=$('#nm');if(n)S.name=n.value.trim();S.onboarded=true;save();tab='today';lastTab=null;render()}
 function refreshLook(){const w=$('#avwrap');if(w)w.innerHTML=avatar(S.av);document.querySelectorAll('.sw button,.seg button').forEach(x=>{const act=x.dataset.a,val=x.dataset.v;x.classList.toggle('on',(act==='g'&&S.av.g===val)||(act==='skin'&&S.av.skin===val)||(act==='hood'&&S.av.hoodie===val))})}
-function refreshOvLook(){const nm=$('#nm')?$('#nm').value:'';const inner=ov.querySelector('.ob');if(inner){inner.innerHTML=`<div class="steps"><button data-a="closeov" aria-label="Close">${ic('x')}</button></div>${lookPanel(true)}`;$('#nm').value=nm}}
+function refreshOvLook(){const nm=$('#nm')?$('#nm').value:'';const inner=ov.querySelector('.ob');if(inner){inner.innerHTML=`<div class="steps">${backBtn()}</div>${lookPanel(true)}`;$('#nm').value=nm}}
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='nm'){e.preventDefault()}});
-document.addEventListener('input',e=>{if(e.target.id==='nm'){S.name=e.target.value;save()}});
+document.addEventListener('input',e=>{
+ if(e.target.id==='nm'){S.name=e.target.value;save()}
+ if(e.target.id==='age'){const v=e.target.value.trim(),m=ageMsg(v);$('#agemsg').innerHTML=m.html;$('#agebtn').disabled=!m.ok;S.age=m.ok?String(parseInt(v,10)):'';save()}
+});
 
 render();
 // service worker not used; keep the demo simple
