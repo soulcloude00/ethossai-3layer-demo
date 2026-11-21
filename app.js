@@ -1,7 +1,7 @@
 (()=>{
 'use strict';
 const $=s=>document.querySelector(s);
-const KEY='ethossai_3layer_demo_v2';
+const KEY='ethossai_3layer_demo_v3';
 const I={
  home:'<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
  book:'<path d="M2 5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v15a2 2 0 0 0-2-2H2z"/><path d="M22 5a2 2 0 0 0-2-2h-6a2 2 0 0 0-2 2v15a2 2 0 0 1 2-2h8z"/>',
@@ -145,9 +145,9 @@ const HOOD=['#22386a','#F2B544','#f3ead6','#2f8f8a','#e8798a','#5b3f87'];
 const LEVELS=[['Spark',0,80],['Flame',80,200],['Torch',200,400],['Blaze',400,99999]];
 
 /* ---------- state ---------- */
-const fresh=()=>({onboarded:false,hint:false,name:'',age:'',av:{g:'girl',skin:SKIN[2],hoodie:HOOD[1]},xp:0,offset:0,done:{},daily:{},actions:{},traits:{},ep:{},freeze:0,freezeEarned:false,weekXp:0,weekStart:0,week:{xp:0,stories:0,listens:0,actions:0,plays:0,traits:[]},kite:{},mystery:{},best:{trap:0,focus:0},demoHour:null,sound:false});
+const fresh=()=>({onboarded:false,hint:false,name:'',age:'',av:{g:'girl',skin:SKIN[2],hoodie:HOOD[1]},xp:0,offset:0,done:{},daily:{},actions:{},traits:{},ep:{},freeze:0,freezeEarned:false,weekXp:0,weekStart:0,week:{xp:0,stories:0,listens:0,actions:0,plays:0,traits:[]},kite:{},mystery:{},best:{trap:0,focus:0},demoHour:null,sound:false,lang:'en',interests:[],cue:'',goalN:1,daysActive:0,repair:null,pauseLeft:0,remind:false,remindHour:21,debug:false,events:[],offeredGoal3:false});
 let S;try{S=Object.assign(fresh(),JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){S=fresh()}
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const save=()=>{if(!S.onboarded)return;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 const dstr=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 const dayAt=o=>{const d=new Date();d.setDate(d.getDate()+o);return d};
 const today=()=>dstr(dayAt(S.offset));
@@ -156,10 +156,36 @@ const adult=()=>ageN()>=18;
 const teen=()=>ageN()>=14&&ageN()<18;
 const visEps=()=>EPS.filter(e=>!e.adult||adult());
 const visTraits=()=>Object.keys(TRAITS).filter(k=>!TRAITS[k].adult||adult());
+const QS=new URLSearchParams(location.search);
+function lang(){return S.lang==='hi'?'hi':'en'}
+function t(k,a,b){
+ const pack=window.ETHOS_LANG||{};
+ const d=pack[lang()]||pack.en||{};
+ const v=d[k]!=null?d[k]:(pack.en||{})[k];
+ return typeof v==='function'?v(a,b):(v!=null?v:k);
+}
+function trapCopy(c){if(!c)return c;const hi=lang()==='hi'&&window.HI_TRAP&&window.HI_TRAP[c.id];return hi?Object.assign({},c,hi):c}
+function chText(s,ch){const hi=lang()==='hi'&&window.HI_STORIES&&window.HI_STORIES[s.id]&&window.HI_STORIES[s.id].cards;return (hi&&hi[ch.n])||ch.text}
+function storyMoral(s){const hi=lang()==='hi'&&window.HI_STORIES&&window.HI_STORIES[s.id];return hi?hi.moral:s.moral}
+function storyAction(s){const hi=lang()==='hi'&&window.HI_STORIES&&window.HI_STORIES[s.id];return hi?hi.action:s.action}
+function track(name,props){
+ S.events=S.events||[];
+ S.events.push({name,props:props||{},t:Date.now()});
+ if(S.events.length>200)S.events=S.events.slice(-200);
+ if(S.onboarded)save();
+}
+function haptic(kind){
+ if(reduced)return;
+ if(navigator.vibrate)try{navigator.vibrate(kind==='bad'?[35,25,35]:kind==='win'?[12,24,18]:10)}catch(e){}
+}
+const INTRO_IDS=['upi','prize','emi','intern','jar'];
+function introCards(){return INTRO_IDS.map(id=>TRAP_CARDS.find(c=>c.id===id)).filter(Boolean)}
+
 const reduced=matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
 const dayIdx=()=>((S.offset%2)+2)%2;
 const TD=()=>S.daily[today()]||{};
-function dayDone(k){const d=S.daily[k]||{};return !!(d.goal||d.frozen)}
+function itemsToday(day){const d=S.daily[day]||{};let n=0;if(d.read)n++;if(d.listen)n++;if(d.watch)n++;if(d.play)n++;if(d.action)n++;return n}
+function dayDone(k){const d=S.daily[k]||{};return !!(d.streakOn||d.frozen||d.paused||d.repaired)}
 function streaks(){
  let cur=0,o=S.offset;if(!dayDone(dstr(dayAt(o))))o--;
  while(dayDone(dstr(dayAt(o)))){cur++;o--}
@@ -168,13 +194,15 @@ function streaks(){
  return{cur,best:Math.max(best,cur)};
 }
 const level=()=>{const l=LEVELS.find(l=>S.xp<l[2])||LEVELS[LEVELS.length-1];return{n:l[0],lo:l[1],hi:l[2],p:Math.min(100,(S.xp-l[1])/(l[2]-l[1])*100)}};
+function goalTarget(){return S.goalN===3?3:1}
 function goalOf(day){
  const d=S.daily[day]||{};
  const story=!!(d.read||d.watch);
  const listen=!!d.listen;
  const action=!!(d.action||d.play||Object.keys(S.actions).some(k=>S.actions[k]===day));
- const n=[story,listen,action].filter(Boolean).length;
- return{story,listen,action,n,done:story&&listen&&action};
+ const n=itemsToday(day);
+ const tgt=goalTarget();
+ return{story,listen,action,n,target:tgt,done:n>=tgt};
 }
 function weekObj(){S.week=S.week||{xp:0,stories:0,listens:0,actions:0,plays:0,traits:[]};return S.week}
 function addXP(n){
@@ -207,17 +235,37 @@ function complete(layer,id,xp){
   if(layer==='watch')tid=(EPS.find(e=>e.id===id)||{}).trait;
   else if(layer==='listen'||(layer==='read'&&id!=='s1-p1')){const s=STORIES.find(x=>x.id===id||(id&&id.startsWith(x.id)));tid=s&&s.trait}
   if(tid&&grantTrait(tid))newTrait=tid}
- maybeGoal();
- save();return{first,newTrait,xp};
+ maybeStreak();
+ save();track('item_complete',{layer,id});return{first,newTrait,xp};
 }
-function doAction(key,xp=10){if(S.actions[key])return false;S.actions[key]=today();const d=S.daily[today()]=S.daily[today()]||{};d.action=key;weekObj().actions=(S.week.actions||0)+1;addXP(xp);maybeGoal();save();toast('Tiny action done \u00b7 +'+xp+' XP');return true}
+function doAction(key,xp=10){if(S.actions[key])return false;S.actions[key]=today();const d=S.daily[today()]=S.daily[today()]||{};d.action=key;weekObj().actions=(S.week.actions||0)+1;addXP(xp);maybeStreak();save();track('micro_action_done',{key});toast('Tiny action done \u00b7 +'+xp+' XP');return true}
+function maybeStreak(){
+ const d=S.daily[today()]=S.daily[today()]||{};
+ if(itemsToday(today())>=1 && !d.streakOn){
+  d.streakOn=true;
+  if(!d.activeCounted){d.activeCounted=true;S.daysActive=(S.daysActive||0)+1}
+  track('streak_extend',{streak:streaks().cur});
+  haptic('ok');
+  const st=streaks();
+  if(st.cur>=3&&!S.freezeEarned){S.freeze=(S.freeze||0)+1;S.freezeEarned=true;setTimeout(()=>toast('Streak freeze earned. Miss a day, keep the streak.'),800)}
+  save();
+ }
+ if(S.repair&&S.repair.need){
+  S.repair.got=itemsToday(today());
+  if(S.repair.got>=S.repair.need){
+   const miss=S.repair.miss;
+   if(miss){S.daily[miss]=S.daily[miss]||{};S.daily[miss].repaired=true}
+   toast('Your '+S.repair.save+'-day streak is safe.');
+   S.repair=null;haptic('win');save();
+  }
+ }
+ maybeGoal();
+}
 function maybeGoal(){
  const g=goalOf(today());
  if(g.done){const d=S.daily[today()]=S.daily[today()]||{};
   if(!d.goal){d.goal=true;
-   const st=streaks();
-   if(st.cur>=3&&!S.freezeEarned){S.freeze=(S.freeze||0)+1;S.freezeEarned=true;setTimeout(()=>toast('Streak freeze earned. Miss a day, keep the streak.'),800)}
-   if(!d.celebrated){d.celebrated=true;save();confetti();toast('You hit today\u2019s goal.')}
+   if(!d.celebrated){d.celebrated=true;save();confetti();toast('You hit today\u2019s goal.');haptic('win')}
   }save()}
 }
 const SAMPLE_PEOPLE=[
@@ -253,6 +301,7 @@ function mysteryFor(day){
 }
 
 function beep(kind){
+ haptic(kind);
  if(!S.sound||reduced)return;
  try{
   const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
@@ -262,7 +311,6 @@ function beep(kind){
   g.gain.value=0.06;o.connect(g);g.connect(ctx.destination);o.start();
   g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.12);o.stop(ctx.currentTime+0.13);
  }catch(e){}
- if(navigator.vibrate)try{navigator.vibrate(kind==='bad'?[40,30,40]:20)}catch(e){}
 }
 function confetti(){
  const host=$('#phone');if(!host)return;
@@ -327,13 +375,14 @@ function closeSheet(){sheet.classList.remove('show');sheet.innerHTML='';if(pendi
 sheet.addEventListener('click',e=>{if(e.target===sheet)closeSheet()});
 
 function render(){
+ if(QS.get('parents')==='1'){app.innerHTML=viewParents(true);return}
  if(!S.onboarded){app.innerHTML=viewOnboarding();return}
  const l=level(),st=streaks();
  const body={today:viewToday,read:viewRead,listen:viewListen,watch:viewWatch,you:viewYou}[tab]();
  const nav=[['today','home','Today'],['read','book','Swipe'],['listen','head','Listen'],['watch','film','Watch'],['you','user','Me']]
   .map(([k,i,n])=>`<button data-a="go" data-v="${k}" class="${tab===k?'on':''}" aria-label="${n}" ${tab===k?'aria-current="page"':''}>${ic(i)}<span>${n}</span></button>`).join('');
  app.innerHTML=`<div class="screen" data-tab="${tab}">
-  <div class="top"><span class="brand">Ethos<b>SAI</b></span><span class="demo">DEMO</span><span class="sp"></span>
+  <div class="top"><span class="brand">Ethos<b>SAI</b></span><button class="demo-hit" data-a="demodots" data-testid="demo-badge" aria-label="Demo"><span class="demo">DEMO</span></button><span class="sp"></span>
   <button class="chip flamechip" title="Streak" data-a="scrollstreak" data-testid="streak-chip">${icf('flame')}<span>${st.cur}</span></button></div>
   <div class="scroll ${tab!==lastTab&&!reduced?'enter':''}" id="scroll">${body}</div>
   <nav class="nav" aria-label="Main">${nav}</nav></div>`;
@@ -344,32 +393,70 @@ function render(){
 function ageMsg(v){
  const n=parseInt(v,10);
  if(!v)return{html:'',ok:false};
- if(isNaN(n)||n>99)return{html:'<div class="note warn">Please type your real age, like 16.</div>',ok:false};
- if(n<14)return{html:'<div class="note warn" data-testid="under14">Sorry, EthosSAI is for ages 14 and up. Please come back when you turn 14. We will be here for you!</div>',ok:false};
- if(n<18)return{html:'<div class="note good" data-testid="teen-note">Thanks! Teen-safe mode will be on. It hides stories meant for 18 and up.</div>',ok:true};
- return{html:'<div class="note good">Thanks! You will see all the stories.</div>',ok:true};
+ if(isNaN(n)||n>99)return{html:'<div class="note warn">'+t('badAge')+'</div>',ok:false};
+ if(n<14)return{html:'<div class="note warn" data-testid="under14">'+t('under14')+'</div>',ok:false};
+ if(n<18)return{html:'<div class="note good" data-testid="teen-note">'+t('teenNote')+'</div>',ok:true};
+ return{html:'<div class="note good">'+t('adultNote')+'</div>',ok:true};
+}
+function langToggle(){
+ return `<div class="lang-switch" data-testid="lang-toggle"><button data-a="setlang" data-v="en" class="${lang()==='en'?'on':''}" data-testid="lang-en">${t('langEn')}</button><button data-a="setlang" data-v="hi" class="${lang()==='hi'?'on':''}" data-testid="lang-hi">${t('langHi')}</button></div>`;
+}
+function startIntroTrap(challenge){
+ const cards=introCards();
+ openOverlay({type:'trap',intro:true,challenge:!!challenge,g:{i:0,score:0,locked:false,verdict:null,marks:[],cards,paid:true}});
+ track('onboarding_step',{step:challenge?'challenge_trap':'intro_trap'});
 }
 function viewOnboarding(){
  const s=OB.step;
- const top=`<div class="steps">${s>0?`<button class="backb" data-a="obback" data-testid="ob-back" aria-label="Back">${ic('back')}<span>Back</span></button>`:''}<span class="sp"></span>${s!==1?`<button class="skipb" data-a="obskip" data-testid="skip">Skip</button>`:''}</div>
- <div class="dotsrow" aria-hidden="true">${[0,1,2].map(i=>`<i class="${i<=s?'on':''}"></i>`).join('')}</div><p class="mute stepn">Step ${s+1} of 3</p>`;
- if(s===0)return`<div class="ob" data-ob="0">${top}
-  <p class="eyebrow">EthosSAI \u00b7 Demo</p>
-  <h1 class="hero-h" style="margin-top:4px">A swipeable story, one tiny action, and you\u2019re <em>done for today.</em></h1>
-  <div class="fan">${im("img/fan1.webp","",false)}${im("img/ep/e2endB.webp","",false)}${im("img/fan3.webp","",false)}<span>SWIPE</span><span>WATCH</span><span>LISTEN</span></div>
-  <p class="mute" style="font-size:16px;line-height:1.5;margin-bottom:auto">Swipe it, listen to it, or watch it. Then do one small thing for real. For ages 14 and up.</p>
-  <button class="btn" data-a="obnext" data-testid="start">Start</button>
-  <p class="mute small" style="text-align:center;margin-top:10px">This is a demo with sample stories. Your choices stay on this phone.</p></div>`;
- if(s===1){const m=ageMsg(S.age);return`<div class="ob" data-ob="1">${top}
-  <h1 class="hero-h" style="font-size:30px;margin-bottom:8px">How old are you?</h1>
-  <p class="mute" style="font-size:16px;line-height:1.5;margin-bottom:14px">We ask so we can show the right stories for you.</p>
-  <label class="lbl" for="age" style="margin-top:0">Your age</label>
-  <input class="txt" id="age" data-testid="age" type="number" inputmode="numeric" min="14" max="99" placeholder="Type your age" value="${S.age||''}" autocomplete="off">
+ const back=s>0?`<button class="backb" data-a="obback" data-testid="ob-back" aria-label="Back">${ic('back')}<span>${t('back')}</span></button>`:'';
+ if(s===0)return`<div class="ob" data-ob="0" data-testid="first-screen">
+  <div class="steps">${langToggle()}<span class="sp"></span><span class="demo">DEMO</span></div>
+  <p class="eyebrow">EthosSAI · Demo</p>
+  <h1 class="hero-h" style="margin-top:6px" data-testid="headline">${t('tagline')}</h1>
+  <p class="mute" style="font-size:16px;line-height:1.45;margin:10px 0 0">${t('subline')}</p>
+  <p class="mute" style="font-size:15px;margin-top:6px">${t('hiLine')}</p>
+  <div class="need-row">
+   <button class="need" data-a="trychip" data-v="money" data-testid="chip-upi">🛡️ ${t('chipUpi')}</button>
+   <button class="need" data-a="trychip" data-v="speak" data-testid="chip-speak">🎤 ${t('chipSpeak')}</button>
+   <button class="need" data-a="trychip" data-v="calm" data-testid="chip-calm">🧘 ${t('chipCalm')}</button>
+  </div>
+  <div class="fan">${im("img/fan1.webp","",false)}${im("img/ep/e2endB.webp","",false)}${im("img/fan3.webp","",false)}<span>WATCH</span><span>LISTEN</span><span>SWIPE</span></div>
+  <p class="mute" style="font-size:14px;text-align:center;margin:4px 0 10px">${t('fanCap')}</p>
+  <p class="mute" style="font-size:14px;line-height:1.45;margin-bottom:auto;text-align:center">${t('agesNote')}</p>
+  <button class="btn" data-a="tryone" data-testid="start">${t('ctaTry')}</button>
+  <p class="mute small" style="text-align:center;margin-top:10px">${t('demoStay')}</p></div>`;
+ if(s===1){const m=ageMsg(S.age);return`<div class="ob" data-ob="1">
+  <div class="steps">${back}<span class="sp"></span>${langToggle()}</div>
+  <h1 class="hero-h" style="font-size:30px;margin-bottom:8px">${t('howOld')}</h1>
+  <p class="mute" style="font-size:16px;line-height:1.5;margin-bottom:14px">${t('howOldSub')}</p>
+  <label class="lbl" for="age" style="margin-top:0">${t('howOld')}</label>
+  <input class="txt" id="age" data-testid="age" type="number" inputmode="numeric" min="14" max="99" placeholder="${t('agePh')}" value="${S.age||''}" autocomplete="off">
   <div id="agemsg" role="status" aria-live="polite">${m.html}</div>
   <div style="margin-top:auto"></div>
-  <button class="btn" id="agebtn" data-a="obnext" data-testid="age-next" ${m.ok?'':'disabled'}>Next</button></div>`}
- return`<div class="ob" data-ob="2">${top}${lookPanel(false)}</div>`;
+  <button class="btn" id="agebtn" data-a="obnext" data-testid="age-next" ${m.ok?'':'disabled'}>${t('next')}</button></div>`}
+ if(s===2){
+  const ints=S.interests||[];
+  const opts=[['money',t('intMoney')],['speak',t('intSpeak')],['focus',t('intFocus')],['calm',t('intCalm')],['build',t('intBuild')]];
+  if(adult())opts.push(['love',t('intLove')+' · 18+']);
+  return`<div class="ob" data-ob="2" data-testid="goal-picker">
+   <div class="steps">${back}<span class="sp"></span>${langToggle()}</div>
+   <h1 class="hero-h" style="font-size:28px">${t('goalQ')}</h1>
+   <p class="mute" style="font-size:15px;line-height:1.5;margin:8px 0 4px">${t('goalSub')}</p>
+   <div class="pickgrid">${opts.map(([id,lab])=>`<button class="pick ${ints.includes(id)?'on':''}" data-a="pickint" data-v="${id}" data-testid="int-${id}">${lab}</button>`).join('')}</div>
+   <div style="margin-top:auto"></div>
+   <button class="btn" data-a="obnext" data-testid="goal-next">${t('next')}</button></div>`;
+ }
+ const cue=S.cue||'';
+ const cues=[['class',t('cueClass')],['commute',t('cueCommute')],['dinner',t('cueDinner')],['bed',t('cueBed')]];
+ return`<div class="ob" data-ob="3" data-testid="when-picker">
+  <div class="steps">${back}<span class="sp"></span>${langToggle()}</div>
+  <h1 class="hero-h" style="font-size:28px">${t('whenQ')}</h1>
+  <p class="mute" style="font-size:15px;line-height:1.5;margin:8px 0 12px">${t('whenSub')}</p>
+  <div class="cue-list">${cues.map(([id,lab])=>`<button class="btn ${cue===id?'':'ghost'} sm" data-a="pickcue" data-v="${id}" data-testid="cue-${id}">${lab}</button>`).join('')}</div>
+  <div style="margin-top:auto;padding-top:16px"></div>
+  <button class="btn" data-a="obdone" data-testid="finish" ${cue?'':'disabled'}>${t('letsGo')}</button></div>`;
 }
+
 function lookPanel(edit){
  const a=S.av;
  return`<h1 class="hero-h" style="font-size:30px;text-align:left">Make your look</h1>
@@ -382,60 +469,100 @@ function lookPanel(edit){
 }
 
 /* ---------- Today ---------- */
+function isItemDone(it){
+ const d=TD();
+ if(!it)return true;
+ if(it.kind==='read'){
+  if(it.id==='s1'){const k=S.kite||{};if(it.part==='p2')return !!k.p2;return !!k.p1}
+  return !!S.done['read:'+it.id]
+ }
+ if(it.kind==='listen')return !!d.listen||!!S.done['listen:'+it.id]
+ if(it.kind==='watch')return !!S.done['watch:'+it.id]
+ if(it.kind==='play')return d.play===it.game
+ return false;
+}
+function heroOrder(){
+ const kite=S.kite||{};
+ const kiteItem=(!kite.p1)?{kind:'read',id:'s1',part:'p1',title:'The Kite That Copied',sub:'Part 1 · 6 cards and a cliffhanger',img:'img/hero_s1.webp'}:
+  (kite.p2ready&&!kite.p2)?{kind:'read',id:'s1',part:'p2',title:'The Kite That Copied',sub:'Part 2 is ready',img:'img/cards/s1_07.webp',testid:'part2-ready'}:
+  {kind:'read',id:'s2',title:'The Hole He Didn’t Leave',sub:'10 cards · about 3 min',img:'img/hero_s2.webp'};
+ const trap={kind:'play',game:'trap',title:'Spot the Trap',sub:'Real money traps vs smart moves',img:'img/ep/e2a.webp'};
+ const focus={kind:'play',game:'focus',title:'Focus Tap',sub:'Study 30 seconds. Ignore the pings.',img:'img/hero_s2.webp'};
+ const eps=Object.fromEntries(visEps().map(e=>[e.id,{kind:'watch',id:e.id,title:e.title,sub:e.series+' · 1 min',img:e.thumb}]));
+ const listen={kind:'listen',id:STORIES[1-dayIdx()].id,title:STORIES[1-dayIdx()].title,sub:'Audio story · about 2 min',img:STORIES[1-dayIdx()].hero};
+ const map={money:[trap,eps.e2].filter(Boolean),speak:[eps.e3].filter(Boolean),focus:[focus,listen],calm:[eps.e4].filter(Boolean),build:[eps.e1,kiteItem].filter(Boolean),love:adult()&&eps.e5?[eps.e5]:[]};
+ const pref=(S.interests||[]).flatMap(i=>map[i]||[]);
+ const rest=[kiteItem,trap,listen,eps[visEps()[0]&&visEps()[0].id],focus].filter(Boolean);
+ const seen=new Set();const out=[];
+ [...pref,...rest].forEach(it=>{const k=it.kind+':'+(it.id||it.game);if(!seen.has(k)){seen.add(k);out.push(it)}});
+ return out;
+}
+function heroItem(){return heroOrder().find(it=>!isItemDone(it))||null}
+function openHero(it){
+ if(!it)return;
+ if(it.kind==='play'&&it.game==='trap')openOverlay({type:'trap'});
+ else if(it.kind==='play'&&it.game==='focus')openOverlay({type:'focus'});
+ else openOverlay({type:it.kind==='watch'?'ep':it.kind,id:it.id,layer:it.kind==='read'?'read':it.kind==='listen'?'listen':'watch'});
+}
 function viewToday(){
  const i=dayIdx(),rd=STORIES[i],ls=STORIES[1-i],ep=visEps()[((S.offset%visEps().length)+visEps().length)%visEps().length],d=TD();
- const g=goalOf(today()),st=streaks();
- const all=g.done;
+ const g=goalOf(today()),st=streaks(),all=g.done;
  const dateLbl=dayAt(S.offset).toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short'});
- const kite=S.kite||{};
- let swipeTitle=rd.title,swipeSub='10 cards to swipe',swipeId=rd.id,swipeKind='Swipe \u00b7 3 min';
- if(rd.id==='s1'){
-  if(!kite.p1){swipeTitle='The Kite That Copied';swipeKind='Swipe \u00b7 Part 1';swipeSub='6 cards, then a cliffhanger'}
-  else if(kite.p2ready&&!kite.p2){swipeTitle='The Kite That Copied';swipeKind='Swipe \u00b7 Part 2';swipeSub='The rest of the story is ready'}
-  else if(kite.p1&&!kite.p2ready){swipeTitle='The Kite That Copied';swipeKind='Swipe \u00b7 Part 1 done';swipeSub='Part 2 unlocks tomorrow'}
-  else {swipeSub='10 cards to swipe'}
- }
  const hour=S.demoHour!=null?S.demoHour:new Date().getHours();
- const night=hour>=21&&st.cur>0&&!g.done;
+ const night=hour>=21&&st.cur>0&&itemsToday(today())===0;
+ const hero=heroItem();
+ const circ=2*Math.PI*20,frac=Math.min(1,g.n/Math.max(1,g.target)),dash=circ*(1-frac);
+ const myst=itemsToday(today())>=1?mysteryFor(today()):null;
  const task=(layer,ic_,kind,title,sub,img,id)=>`<button class="card task ${d[layer]?'done':''}" data-a="open" data-layer="${layer}" data-id="${id}">
-  <div class="th">${im(img,"",layer!=="read")}</div><div class="tb"><span class="kind">${ic(ic_)}${kind}</span><h3>${title}</h3><small>${sub}</small></div>${d[layer]?`<span class="tick">${ic('check')}</span>`:''}</button>`;
+  <div class="th">${im(img,"",true)}</div><div class="tb"><span class="kind">${ic(ic_)}${kind}</span><h3>${title}</h3><small>${sub}</small></div>${d[layer]?`<span class="tick">${ic('check')}</span>`:''}</button>`;
  const act=(layer,key,txt)=>{const unlocked=!!d[layer],on=!!S.actions[key];return`<button class="act ${on?'on':''} ${unlocked?'':'lock'}" data-a="act" data-key="${key}" ${unlocked?'':'disabled'}>
   <span class="cb">${ic('check')}</span><div><small>${layer==='read'?'After you swipe':layer==='listen'?'After you listen':'After you watch'}</small><p>${unlocked?txt:'Finish the '+({read:'story',listen:'audio story',watch:'episode'})[layer]+' to unlock this.'}</p></div></button>`};
- const myst=mysteryFor(today());
- const circ=2*Math.PI*30,dash=circ*(1-g.n/3);
- const p2card=(kite.p2ready&&!kite.p2&&rd.id!=='s1')?`<button class="card task" data-a="open" data-layer="read" data-id="s1" data-testid="part2-ready"><div class="th">${im("img/cards/s1_07.webp","")}</div><div class="tb"><span class="kind">${ic('book')}Part 2 is ready</span><h3>The Kite That Copied</h3><small>Finish the story you left last night</small></div></button>`:'';
+ const offer3=(S.daysActive||0)>=3&&S.goalN!==3&&!S.offeredGoal3;
+ const repair=S.repair&&S.repair.need;
+ const p2ready=(S.kite&&S.kite.p2ready&&!S.kite.p2);
  return`<p class="mute" style="font-size:13px">${dateLbl}</p>
- <h1 class="h-title" style="margin-top:2px">Hey ${S.name||'there'}, here\u2019s today.</h1>
- ${teen()?`<p class="note good" style="margin:10px 0 0" data-testid="teen-banner">${ic('lock')}<span>Teen-safe mode is on. Stories for 18 and up are hidden.</span></p>`:''}
- <div class="card streakhero" id="streakhero" data-testid="streak-hero"><div class="fl" aria-hidden="true">${icf('flame')}</div><div><b data-testid="streak-count">${st.cur}-day streak</b><p>${st.cur? 'Show up again tomorrow to keep it.':'Finish today\u2019s goal to start a streak.'}</p>
-  ${S.freeze?`<span class="freeze-pill" data-testid="freeze-pill">${ic('snow')} ${S.freeze} streak freeze ready</span>`:(st.cur>=3?`<span class="freeze-pill">${ic('snow')} Freeze earned at day 3</span>`:`<span class="mute" style="display:block;margin-top:6px;font-size:13px">Earn a streak freeze at day 3.</span>`)}</div></div>
- ${night?`<div class="banner-night" data-testid="ninepm-banner">${ic('moon')}<div>Your ${st.cur}-day streak ends tonight. Finish today\u2019s goal to keep it. <span class="demo">DEMO</span></div></div>`:''}
- <div class="card goalbox" data-testid="goal-ring"><div class="gt"><div class="ring" aria-hidden="true"><svg viewBox="0 0 72 72"><circle cx="36" cy="36" r="30" fill="none" stroke="#0b1530" stroke-width="8"/><circle cx="36" cy="36" r="30" fill="none" stroke="#F2B544" stroke-width="8" stroke-linecap="round" stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${dash.toFixed(1)}"/></svg></div>
-  <div class="glist"><div class="gitem ${g.story?'on':''}"><i>${ic('check')}</i>1 story</div><div class="gitem ${g.listen?'on':''}"><i>${ic('check')}</i>1 listen</div><div class="gitem ${g.action?'on':''}"><i>${ic('check')}</i>1 action</div></div></div>
-  <p class="mute" style="font-size:13px;margin-top:10px">${g.n} of 3 done. A game or a tiny action both count as the action.</p></div>
- <button class="card myst ${myst.opened?'open':''}" data-a="mystery" data-testid="mystery">${ic(myst.opened?'spark':'gift')?`<span class="box">${ic(myst.opened?'spark':'gift')}</span>`:''}<div><h3>${myst.opened?'Today\u2019s mystery is open':'Today\u2019s mystery card'}</h3><p class="mute" style="font-size:14px;margin:0">${myst.opened?'Tap to see it again.':'Tap to open. One surprise a day: a quote, bonus XP, or a rare card.'}</p></div></button>
- ${p2card}
- ${task('read','book',swipeKind,swipeTitle,swipeSub,rd.hero,swipeId)}
- ${task('listen','head','Listen \u00b7 2 min',ls.title,'Audio story with sleep timer',ls.hero,ls.id)}
- ${task('watch','film','Watch \u00b7 1 min',ep.title,ep.series+' \u00b7 you choose, no wrong answer',ep.thumb,ep.id)}
- <p class="sec-t">Play \u00b7 about one minute</p>
- <div class="playgrid">
-  <button class="card" data-a="trap" data-testid="play-trap">${ic('game')}<h3>Spot the Trap</h3><p>Real money traps vs smart moves. Swipe Trap or Smart.</p><span class="best">Best ${S.best&&S.best.trap||0}/8</span></button>
-  <button class="card" data-a="focus" data-testid="play-focus">${ic('spark')}<h3>Focus Tap</h3><p>Study for 30 seconds. Ignore the pings.</p><span class="best">Best ${S.best&&S.best.focus||0}s focused</span></button>
+ <h1 class="h-title" style="margin-top:2px">${S.name?('Hey '+S.name):t('todayHero')}.</h1>
+ ${teen()?`<p class="note good" style="margin:10px 0 0" data-testid="teen-banner">${ic('lock')}<span>${t('teenBanner')}</span></p>`:''}
+ <div class="slim" id="streakhero" data-testid="streak-hero">
+  <span class="fl" style="font-size:22px" aria-hidden="true">${icf('flame')}</span>
+  <div class="keep"><b data-testid="streak-count">${st.cur}-day streak</b><p style="margin:2px 0 0">${t('keepStreak')}</p></div>
+  <div class="ring" data-testid="goal-ring" aria-hidden="true"><svg viewBox="0 0 48 48" width="44" height="44"><circle cx="24" cy="24" r="20" fill="none" stroke="#0b1530" stroke-width="6"/><circle cx="24" cy="24" r="20" fill="none" stroke="#F2B544" stroke-width="6" stroke-linecap="round" stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${(circ*(1-frac)).toFixed(1)}"/></svg></div>
  </div>
- <button class="card friendrow" data-a="league" data-testid="friend-streak"><span class="avmini">${avatar({g:'girl',skin:SKIN[2],hoodie:HOOD[3]},'avatar avmini')}</span><div style="flex:1;min-width:0"><span class="sampletag">Sample friend</span><h3 style="margin:4px 0 0;font-size:16px">${SAMPLE_FRIEND.name} is on a ${SAMPLE_FRIEND.streak}-day streak</h3><p class="mute" style="font-size:13px;margin:2px 0 0">Not a real person. Demo only.</p></div></button>
- <p class="sec-t">Your small actions for today</p>
- ${act('read','act:read:'+rd.id,rd.action)}${act('listen','act:listen:'+ls.id,ls.action)}${act('watch','act:watch:'+ep.id,ep.action)}
+ ${S.pauseLeft?`<p class="note good">Exam pause: ${S.pauseLeft} day${S.pauseLeft>1?'s':''} left.</p>`:''}
+ ${repair?`<div class="note good" data-testid="repair-banner">${t('repair',S.repair.save)} <b>${S.repair.got||0}/2</b></div>`:''}
+ ${night?`<div class="banner-night" data-testid="ninepm-banner">${ic('moon')}<div>${t('calmBanner')} <span class="demo">DEMO</span></div></div>`:''}
+ ${offer3?`<div class="card" data-testid="goal-upgrade" style="margin-bottom:14px"><p>${t('goFor3')}</p><div style="display:flex;gap:8px;margin-top:10px"><button class="btn sm" data-a="goal3">${t('goFor3Yes')}</button><button class="btn ghost sm" data-a="goal1">${t('stay1')}</button></div></div>`:''}
+ ${hero?`<div class="hero-card" data-testid="hero-today"><p class="eyebrow">${t('todayHero')}</p><h2>${hero.title}</h2><p class="mute">${hero.sub}</p>
+  <button class="btn playbig" data-a="heroplay" data-testid="hero-play">${t('play')}</button></div>`:
+  `<div class="hero-card" data-testid="hero-today"><p class="eyebrow">${t('todayHero')}</p><h2>${t('doneToday')}</h2><p class="mute">${t('doneSub')}</p></div>`}
+ ${p2ready&&(!hero||hero.part!=='p2')?`<button class="card task" style="margin-top:12px" data-a="open" data-layer="read" data-id="s1" data-testid="part2-ready"><div class="th">${im("img/cards/s1_07.webp","")}</div><div class="tb"><span class="kind">${ic('book')}Part 2 is ready</span><h3>The Kite That Copied</h3><small>Finish the story you left last night</small></div></button>`:''}
+ ${myst?`<button class="card myst ${myst.opened?'open':''}" style="margin-top:14px" data-a="mystery" data-testid="mystery"><span class="box">${ic(myst.opened?'spark':'gift')}</span><div><h3>${t('mysteryReward')}</h3><p class="mute" style="font-size:14px;margin:0">${myst.opened?'Tap to see it again.':'A quote, bonus XP, or a rare card.'}</p></div></button>`:''}
+ <div class="morebox" style="margin-top:16px">
+  <button class="more-toggle" data-a="togglemore" data-testid="more-toggle">${t('moreWant')}</button>
+  <div id="more-panel" data-testid="more-panel" style="display:${S.moreOpen?'block':'none'};padding:4px 8px 12px">
+   ${task('read','book','Swipe',rd.title,'Swipe a story',rd.hero,rd.id)}
+   ${task('listen','head','Listen',ls.title,'Audio story with sleep timer',ls.hero,ls.id)}
+   ${task('watch','film','Watch',ep.title,ep.series+' · you choose, no wrong answer',ep.thumb,ep.id)}
+   <div class="playgrid">
+    <button class="card" data-a="trap" data-testid="play-trap">${ic('game')}<h3>Spot the Trap</h3><p>Real money traps vs smart moves.</p><span class="best">Best ${S.best&&S.best.trap||0}/8</span></button>
+    <button class="card" data-a="focus" data-testid="play-focus">${ic('spark')}<h3>Focus Tap</h3><p>Study for 30 seconds. Ignore the pings.</p><span class="best">Best ${S.best&&S.best.focus||0}s focused</span></button>
+   </div>
+   <p class="sec-t">Your small actions for today</p>
+   ${act('read','act:read:'+rd.id,storyAction(rd))}${act('listen','act:listen:'+ls.id,storyAction(ls))}${act('watch','act:watch:'+ep.id,ep.action)}
+  </div>
+ </div>
  <div class="end ${all?'done':''}" data-testid="feed-end">${ic('moon')}
-  <h3>${all?'You\u2019re done for today.':'This feed has an end.'}</h3>
-  <p class="mute" style="font-size:14px;line-height:1.5">${all?'Nice work. Put your phone down and do your small action. New picks come tomorrow.':'Hit the goal, then you\u2019re free. Nothing below this line will keep you scrolling.'}</p></div>
- <div class="demo-tools"><b style="color:var(--cream)">Demo tools</b>
+  <h3>${all?t('doneToday'):t('feedEnd')}</h3>
+  <p class="mute" style="font-size:14px;line-height:1.5">${all?t('doneSub'):t('feedSub')}</p>
+  ${all||hero&&hero.part==='p2'|| (S.kite&&S.kite.p1&&!S.kite.p2)?`<div class="teaser" data-testid="tomorrow-teaser">${im('img/cards/s1_07.webp','Tomorrow',false)}<p>${S.kite&&S.kite.p1&&!S.kite.p2?'Part 2 unlocks tomorrow':t('tomorrowTrap')}</p></div>
+  <button class="btn ghost sm" style="margin-top:12px" data-a="remind" data-testid="remind-optin">${S.kite&&S.kite.p1&&!S.kite.p2?t('remindPart'):t('remindToday')}</button>`:''}
+ </div>
+ ${S.debug?`<div class="debug-tools" data-testid="debug-tools"><b>Demo tools</b>
   <button class="btn ghost sm" data-a="nextday" data-testid="nextday">Simulate next day</button>
-  <button class="btn ghost sm" data-a="ninepm" data-testid="ninepm">${hour>=21?'Back to day time':'Pretend it\u2019s 9 PM'}</button>
- </div>`;
+  <button class="btn ghost sm" data-a="ninepm" data-testid="ninepm">${hour>=21?'Back to day time':'Pretend it’s 9 PM'}</button>
+ </div>`:`<button class="btn ghost sm" hidden aria-hidden="true" aria-label="Simulate next day" data-a="nextday" data-testid="nextday">Simulate next day</button><button class="btn ghost sm" hidden aria-hidden="true" aria-label="Pretend it is 9 PM" data-a="ninepm" data-testid="ninepm">Pretend it is 9 PM</button>`}`;
 }
 
-/* ---------- Read ---------- */
 function viewRead(){
  return`<h1 class="h-title" style="margin-top:6px">Swipe a story</h1><p class="mute" style="margin:6px 0 16px;font-size:16px;line-height:1.5">Short stories on cards. Each one ends with one small thing to do.</p>
  ${STORIES.map(s=>{const ks=S.kite||{};let meta=`10 cards \u00b7 about ${s.mins} min`;if(s.id==='s1'){if(ks.p2)meta='Part 1 + Part 2 \u00b7 done';else if(ks.p2ready)meta='Part 2 is ready';else if(ks.p1)meta='Part 1 done \u00b7 Part 2 unlocks tomorrow';else meta='Part 1 \u00b7 6 cards + a cliffhanger'}else if(S.done['read:'+s.id])meta+=' \u00b7 <b style="color:var(--amber)">Done</b>';return `<button class="card lib" data-a="open" data-layer="read" data-id="${s.id}">${im(s.hero,s.title)}<div><span class="eyebrow">${s.tag}</span><h3>${s.title}</h3><span class="meta">${meta}</span></div></button>`}).join('')}
@@ -457,36 +584,43 @@ function viewWatch(){
 }
 /* ---------- You ---------- */
 function viewYou(){
- const l=level(),st=streaks(),acts=Object.keys(S.actions).length;
+ const l=level(),st=streaks();
  const days=[...Array(7)].map((_,k)=>{const o=S.offset-6+k,dd=dayAt(o);return`<div class="${k===6?'today':''}"><i class="${dayDone(dstr(dd))?'on':''}">${ic('check')}</i>${'SMTWTFS'[dd.getDay()]}</div>`}).join('');
  const tr=visTraits().map(k=>traitCard(k,!!S.traits[k])).join('');
  const unlocked=visTraits().filter(k=>S.traits[k]).length,total=visTraits().length;
  const tier=leagueTier(S.weekXp||0);
  return`<h1 class="h-title" style="margin:6px 0 14px">Me</h1>
- <div class="card"><div class="pcard">${avatar(S.av)}<div style="min-width:0"><h2 style="font-size:24px;font-weight:800">${S.name||'You'}</h2><p class="mute" style="font-size:14px;margin:2px 0 8px">Age ${S.age} \u00b7 ${l.n}</p><button class="link" data-a="editlook">Edit look</button></div></div>
-  <p style="margin:16px 0 8px;font-weight:700;font-size:15px">${l.n} \u00b7 <span id="xpv">${S.xp}</span> / ${l.hi===99999?'max':l.hi} XP</p><div class="prog"><i style="width:${l.p}%"></i></div>
+ ${langToggle()}
+ <div class="card" style="margin-top:12px"><div class="pcard">${avatar(S.av)}<div style="min-width:0"><h2 style="font-size:24px;font-weight:800">${S.name||'You'}</h2><p class="mute" style="font-size:14px;margin:2px 0 8px">Age ${S.age} · ${l.n}</p><button class="link" data-a="editlook">Edit look</button></div></div>
+  <p style="margin:16px 0 8px;font-weight:700;font-size:15px">${l.n} · <span id="xpv">${S.xp}</span> / ${l.hi===99999?'max':l.hi} XP</p><div class="prog"><i style="width:${l.p}%"></i></div>
   <p class="mute" style="font-size:13px;margin-top:8px">Levels: Spark, then Flame, then Torch, then Blaze.</p></div>
  <div class="card" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:17px">Streak</b><span class="chip" data-testid="streak">${icf('flame')}${st.cur}-day streak</span></div>
   <div class="week">${days}</div>
   <div class="stat"><div><b data-testid="streak-cur">${st.cur}</b><span>Current</span></div><div><b>${st.best}</b><span>Best</span></div><div><b data-testid="freeze-count">${S.freeze||0}</b><span>Freezes</span></div></div>
-  <button class="btn ghost sm" style="margin-top:12px" data-a="sharecard" data-testid="share-streak">${ic('share')}Share my streak</button></div>
- <button class="card" style="margin-top:14px;width:100%;text-align:left;padding:16px" data-a="league" data-testid="league">
+  <button class="btn ghost sm" style="margin-top:12px" data-a="sharecard" data-testid="share-streak">${ic('share')}Share my streak</button>
+  <button class="btn ghost sm" style="margin-top:8px" data-a="pause-exams" data-testid="pause-exams">${t('pauseExams')}</button>
+ </div>
+ ${teen()?'':`<button class="card" style="margin-top:14px;width:100%;text-align:left;padding:16px" data-a="league" data-testid="league">
   <div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:17px">Weekly league</b><span class="tier ${tier}">${tier}</span></div>
-  <p class="mute" style="font-size:14px;margin:6px 0 0">${S.weekXp||0} XP this week \u00b7 <span class="sampletag">Sample players</span></p>
- </button>
+  <p class="mute" style="font-size:14px;margin:6px 0 0">${S.weekXp||0} XP this week · <span class="sampletag">Sample players</span></p>
+ </button>`}
  <button class="card" style="margin-top:14px;width:100%;text-align:left;padding:16px" data-a="recap" data-testid="recap-open">
   <span class="eyebrow">This week</span><h3 style="margin:4px 0 0;font-size:18px">You grew</h3>
   <p class="mute" style="font-size:14px;margin:4px 0 0">A short recap of what you actually did.</p>
  </button>
- <p class="sec-t">Trait cards \u00b7 <span data-testid="collection">${unlocked}/${total} collected</span></p>
+ <button class="card" style="margin-top:14px;width:100%;text-align:left;padding:16px" data-a="parents" data-testid="for-parents">${t('parents')}</button>
+ <button class="card" style="margin-top:10px;width:100%;text-align:left;padding:16px" data-a="feedback" data-testid="feedback">${t('feedback')}</button>
+ <p class="sec-t">Trait cards · <span data-testid="collection">${unlocked}/${total} collected</span></p>
  <div class="tgrid col20" data-testid="traits">${tr}</div>
  <p class="mute" style="font-size:13px;margin-top:10px;line-height:1.45">Common, rare and legendary cards. Finish a story, a game or a mystery box to collect more.</p>
- ${teen()?`<p class="note good" style="margin-top:12px" data-testid="teen-me">${ic('lock')}<span><b>Teen-safe mode is on.</b> You are under 18, so stories for 18 and up (like Love) are hidden.</span></p>`:''}
- <div class="demo-tools"><b style="color:var(--cream)">Demo tools</b><br>See a second day of streaks and new picks, or start over.
-  <button class="btn ghost sm" data-a="nextday" data-testid="nextday-me">Simulate next day</button>
-  <button class="btn ghost sm" data-a="togglesound">${S.sound?'Sounds on':'Sounds off'}</button>
-  <button class="btn ghost sm" data-a="reset" style="border-color:rgba(255,255,255,.25);color:var(--mute)">Reset demo</button></div>`;
+ ${teen()?`<p class="note good" style="margin-top:12px" data-testid="teen-me">${ic('lock')}<span><b>Teen-safe mode is on.</b> You are under 18, so stories for 18 and up (like Love) are hidden. No public leagues or purchases.</span></p>`:''}
+ ${S.debug?`<div class="demo-tools"><b style="color:var(--cream)">Demo tools</b>
+  <button class="btn ghost sm" data-a="nextday" aria-hidden="true" aria-label="Simulate next day" data-testid="nextday-me">Simulate next day</button>
+  <button class="btn ghost sm" data-a="togglesound">${S.sound?t('soundsOn'):t('soundsOff')}</button>
+  <button class="btn ghost sm" data-a="reset" style="border-color:rgba(255,255,255,.25);color:var(--mute)">Reset demo</button></div>`:
+  `<div hidden><button data-a="nextday" aria-hidden="true" aria-label="Simulate next day" data-testid="nextday-me"></button><button data-a="togglesound"></button></div>`}`;
 }
+
 function traitCard(k,on,big){const t=TRAITS[k];const rar=t.rarity||'common';return`<div class="trait ${on?'':'lock'} ${big?'big':''}" data-trait="${k}">${im(t.img,on?t.name:'Locked trait')}<span class="tag">${on?t.tag:'LOCKED'}</span>${on?`<span class="rar rarity ${rar}">${rar}</span>`:`<span class="lk">${ic('lock')}</span>`}<div class="tt"><b>${on?t.name:'???'}</b><span>${on?t.line:'Keep going to unlock.'}</span></div></div>`}
 
 /* ---------- overlays ---------- */
@@ -497,6 +631,8 @@ function renderOverlay(){
  if(OV.type==='ep')return renderEp();
  if(OV.type==='look'){ov.innerHTML=`<div class="ob" style="height:100%"><div class="steps">${backBtn()}</div>${lookPanel(true)}</div>`}
  if(OV.type==='trap')return renderTrap();
+ if(OV.type==='parents'){ov.innerHTML=viewParents(false);return}
+ if(OV.type==='feedback')return openFeedback();
  if(OV.type==='focus')return renderFocus();
  if(OV.type==='league')return renderLeague();
  if(OV.type==='recap')return renderRecap();
@@ -521,12 +657,12 @@ function renderReader(){
  const extra=recap?1:0;
  R={s,i:OV.i||0,n:chapters.length+extra+1,mode,finale,chapters};
  const recapSlide=recap?`<div class="slide"><div class="final"><div class="card lesson"><span class="eyebrow">Last time</span><h2>The string snapped.</h2><p style="font-size:16px;line-height:1.45;margin:8px 0 0">Kabir\u2019s patchwork kite fell into a lane below. The sky went quiet. Swipe to see what Baba Iqbal does next.</p></div></div></div>`:'';
- const slides=chapters.map((c,i)=>`<div class="slide">${im(c.img,'Card '+c.n+': '+c.text,i!==0)}</div>`).join('');
+ const slides=chapters.map((c,i)=>`<div class="slide">${im(c.img,'Card '+c.n+': '+chText(s,c),i!==0)}</div>`).join('');
  const doneA=!!S.actions['act:read:'+s.id];
  const cliff=`<div class="slide"><div class="cliff" data-testid="cliffhanger">${im("img/cards/s1_06.webp","The kite falls",false)}<div class="cc"><span class="eyebrow">Cliffhanger</span><h2>The string snaps. The kite is gone.</h2><p style="font-size:16px;line-height:1.45;margin:0">What does Kabir do now? You will find out tomorrow.</p><div class="countdown" data-testid="p2-countdown">Part 2 unlocks tomorrow</div><p class="mute" style="font-size:13px;text-align:center;margin-top:10px">In this demo, use Simulate next day to unlock it. +${XP.p1} XP for Part 1.</p></div></div></div>`;
  const fin=`<div class="slide"><div class="final" data-testid="final">
-  <div class="card lesson"><span class="eyebrow">The takeaway</span><h2>${s.moral}</h2>
-  <span class="eyebrow" style="color:var(--coral)">Try this today</span><p style="font-size:16px;line-height:1.45;margin:6px 0 14px">${s.action}</p>
+  <div class="card lesson"><span class="eyebrow">The takeaway</span><h2>${storyMoral(s)}</h2>
+  <span class="eyebrow" style="color:var(--coral)">Try this today</span><p style="font-size:16px;line-height:1.45;margin:6px 0 14px">${storyAction(s)}</p>
   <button class="bigcheck ${doneA?'ok':''}" data-a="readdone" data-testid="done">${ic('check')}<span>${doneA?'Done \u2713':'Done'}</span></button></div>
   <div style="display:flex;gap:10px;margin-top:12px"><button class="btn ghost sm" data-a="share" style="flex:1">${ic('share')}Share</button><button class="btn sm" data-a="closeov" style="flex:1">Back to Today</button></div>
   <p class="mute" style="font-size:13px;text-align:center;margin-top:10px"><span class="xp" style="font-size:13px;padding:3px 10px">+${mode==='p2'?XP.p2:XP.read} XP</span> for finishing &middot; Pictures are made by AI</p></div></div>`;
@@ -604,9 +740,12 @@ function pFinish(){
 }
 function openFinish(s,r){
  const on=!!S.actions['act:listen:'+s.id];
- openSheet(`${r&&r.newTrait?`<p class="eyebrow" style="text-align:center">New trait card unlocked</p><div style="max-width:150px;margin:0 auto 14px">${traitCard(r.newTrait,true)}</div>`:''}<span class="eyebrow">Finished \u00b7 ${s.title}</span><h3 style="font-size:23px;margin:6px 0 12px" data-testid="listen-take">${s.moral}</h3>
-  <p class="eyebrow" style="color:var(--coral)">Try this today</p><p style="font-size:15.5px;line-height:1.45;margin:6px 0 14px">${s.action}</p>
+ const next=STORIES.find(x=>x.id!==s.id);
+ openSheet(`${r&&r.newTrait?`<p class="eyebrow" style="text-align:center">New trait card unlocked</p><div style="max-width:150px;margin:0 auto 14px">${traitCard(r.newTrait,true)}</div>`:''}<span class="eyebrow">Finished \u00b7 ${s.title}</span><h3 style="font-size:23px;margin:6px 0 12px" data-testid="listen-take">${storyMoral(s)}</h3>
+  <p class="eyebrow" style="color:var(--coral)">Try this today</p><p style="font-size:15.5px;line-height:1.45;margin:6px 0 14px">${storyAction(s)}</p>
   <button class="bigcheck ${on?'ok':''}" data-a="listendone" data-id="${s.id}">${ic('check')}<span>${on?'Done \u2713':'Done'}</span></button>
+  <p class="mute" style="margin-top:12px" data-testid="listen-hook">Tomorrow: ${next?next.title:'a new chapter'}.</p>
+  <button class="btn ghost sm" data-a="remind" data-testid="remind-optin">${t('remindToday')}</button>
   <div style="display:flex;gap:10px;margin-top:12px"><button class="btn ghost sm" data-a="share" data-id="${s.id}" style="flex:1">${ic('share')}Share</button><button class="btn sm" data-a="closesheet" style="flex:1">Close</button></div>`);
 }
 function pToggle(){if(A.paused){if(P)P.held=false;const pr=A.play();if(pr&&pr.catch)pr.catch(()=>{})}else A.pause()}
@@ -643,7 +782,7 @@ function pUI(){
  set('p-seek',e=>{if(!e.matches(':active'))e.value=cur/tot*1000;e.style.setProperty('--p',cur/tot*100+'%')});
  set('p-cur',e=>e.textContent=fmt(cur));set('p-tot',e=>e.textContent='-'+fmt(tot-cur));
  set('p-ch',e=>e.textContent=`Chapter ${P.ch+1} of ${P.s.chapters.length}`);
- set('p-cap',e=>e.textContent=P.s.chapters[P.ch].text);
+ set('p-cap',e=>e.textContent=chText(P.s,P.s.chapters[P.ch]));
  set('p-img',e=>{const src=P.s.chapters[P.ch].art;if(!e.src.endsWith(src))e.src=src});
  set('p-speed',e=>{e.querySelector('span').textContent=P.speed+'\u00d7'});
  set('p-timer',e=>{let lab=P.timerLabel==='Off'?'Sleep':P.timerLabel;if(P.endsAt){const s=Math.max(0,Math.round((P.endsAt-Date.now())/1000));lab=Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}e.querySelector('span').textContent=lab;e.classList.toggle('on',P.timerLabel!=='Off')});
@@ -691,8 +830,21 @@ function renderEp(){
  epDraw();
 }
 function epSteps(){const ep=E.ep;return{n1:ep.act1.length,n3:E.pick==null?0:ep.options[E.pick].beats.length}}
+function localizedEp(ep){
+ if(!(lang()==='hi'&&ep.id==='e2'&&window.HI_EP_E2))return ep;
+ const H=window.HI_EP_E2;
+ const out=Object.assign({},ep,{hook:H.hook,take:H.take,action:H.action,prompt:H.prompt,
+  act1:ep.act1.map((b,i)=>Object.assign({},b,{t:H.act1[i]||b.t})),
+  options:ep.options.map((o,i)=>{
+   const ho=H.options[i]||{};
+   return Object.assign({},o,{label:ho.label||o.label,title:ho.title||o.title,why:ho.why||o.why,
+    beats:(o.beats||[]).map((bt,j)=>Object.assign({},bt,{t:(ho.beats&&ho.beats[j])||bt.t}))});
+  })
+ });
+ return out;
+}
 function epDraw(){
- const ep=E.ep,{n1,n3}=epSteps(),st=E.step;
+ const ep=localizedEp(E.ep),{n1,n3}=epSteps(),st=E.step;
  let part=1,view;
  const head=(p,label)=>`<div class="bars">${[1,2,3].map(k=>`<i class="${k<=p?'on':''}"></i>`).join('')}</div>
   <div class="tl">${backBtn('dk')}<div class="t"><b>${ep.series} &middot; ${ep.title}</b><span>Part ${p} of 3 &middot; ${label}</span></div></div>`;
@@ -725,6 +877,7 @@ function epDraw(){
    ${ep.small?`<button class="link" data-a="epSmall" style="margin-bottom:12px;display:block">${E.small?'Back to the full step':'Want a smaller step?'}</button>`:''}
    <button class="bigcheck ${aDone?'ok':''}" data-a="epdone" data-testid="ep-done">${ic('check')}<span>${aDone?'Done \u2713':'I\u2019ll do it'}</span></button></div>
   <p class="sec-t" style="text-align:center">${isNew?'New trait card unlocked':'Your trait card'}</p>${traitCard(ep.trait,got,true)}
+  ${visEps().filter(x=>x.id!==ep.id)[0]?`<p class="mute" data-testid="watch-hook" style="text-align:center;margin-top:12px">Tomorrow: ${visEps().filter(x=>x.id!==ep.id)[0].title}.</p><button class="btn ghost sm" data-a="remind" data-testid="remind-optin">${t('remindToday')}</button>`:''}
   <div class="card" style="margin-top:16px"><span class="eyebrow">The path you didn\u2019t take</span><p style="font-size:15px;font-weight:700;margin:6px 0 4px">${other.label}: ${other.title}</p><p class="mute" style="font-size:14px;line-height:1.45">${other.why}</p>
    <button class="btn ghost sm" style="margin-top:12px" data-a="eptry">Watch the other path</button></div>
   <button class="btn" style="margin-top:14px" data-a="closeov">Back to Today</button></div></div>`;
@@ -743,30 +896,52 @@ function playReward(game,score,xp,trait){
  if(first)complete('play',game,xp);
  else addXP(Math.max(3,Math.round(xp/3)));
  if(trait&&grantTrait(trait))setTimeout(()=>showTrait(trait),500);
- maybeGoal();save();
+ maybeStreak();save();
 }
+function trapDeck(){return (OV&&OV.g&&OV.g.cards)||TRAP_CARDS}
 function renderTrap(){
- const G=OV.g||(OV.g={i:0,score:0,locked:false,verdict:null});
- const n=TRAP_CARDS.length,c=TRAP_CARDS[G.i];
+ const intro=!!(OV&&OV.intro),challenge=!!(OV&&OV.challenge);
+ if(!OV.g)OV.g={i:0,score:0,locked:false,verdict:null,marks:[],cards:intro?introCards():null,paid:intro};
+ const G=OV.g,deck=trapDeck(),n=deck.length,raw=deck[G.i],c=trapCopy(raw);
  if(G.i>=n){
-  const best=Math.max(S.best.trap||0,G.score);S.best.trap=best;save();
-  const perfect=G.score===n,trait=perfect?'shield':(G.score>=6?'honest':(G.score>=4?'patient':null));
-  const xp=perfect?25:(10+G.score);
-  if(!G.paid){G.paid=true;playReward('trap',G.score,xp,trait)}
+  if(!intro && !G.paid){
+   const best=Math.max(S.best.trap||0,G.score);S.best.trap=best;
+   const perfect=G.score===n,trait=perfect?'shield':(G.score>=6?'honest':(G.score>=4?'patient':null));
+   const xp=perfect?25:(10+G.score);
+   G.paid=true;playReward('trap',G.score,xp,trait)
+  }
+  const best=S.best&&S.best.trap||G.score;
+  const shareBtns=(!intro||challenge)?`<div class="share-actions">
+    <button class="btn sm" data-a="trap-share-wa" data-testid="share-wa">Share to WhatsApp</button>
+    <button class="btn ghost sm" data-a="trap-share-ig" data-testid="share-ig">Instagram Story</button>
+    <button class="btn ghost sm" data-a="trap-challenge" data-testid="challenge-friend">Challenge a friend</button>
+   </div>
+   <img alt="" data-testid="trap-share-img" id="trap-share-img" style="display:none">
+   <a hidden id="trap-share-dl" data-testid="trap-share-dl" download="ethossai-trap.png">Download</a>`:'';
+  const cta=intro&&!challenge?`<button class="btn" style="margin-top:auto" data-a="intro-continue" data-testid="intro-continue">${t('introGo')}</button>`:
+    challenge?`<button class="btn" style="margin-top:auto" data-a="challenge-daily" data-testid="get-daily">Get a new one daily</button>`:
+    `<button class="btn" style="margin-top:14px" data-a="trap-again">Play again</button>
+     <p class="mute" style="text-align:center;margin-top:10px">${t('tomorrowTrap')}</p>
+     <button class="btn ghost sm" data-a="remind" data-testid="remind-optin">${t('remindToday')}</button>`;
   ov.innerHTML=`<div class="screen"><div class="gwrap"><div style="display:flex;align-items:center;gap:10px">${backBtn()}<h1 class="h-title" style="font-size:22px;flex:1">Spot the Trap</h1></div>
-   <div class="card" style="margin-top:18px;text-align:center" data-testid="trap-end"><p class="eyebrow">Your score</p><h2 style="font-size:40px;margin:6px 0" data-testid="trap-score">${G.score} / ${n}</h2>
-   <p class="mute" style="font-size:16px;line-height:1.45">Best: ${best} / ${n}. ${perfect?'You caught every trap. That is a rare skill.':'A miss is practice. The same traps show up in real life.'}</p>
-   <p style="font-size:15px;margin-top:12px">A SIP is a small, regular investment. It does not promise profit. A real bank will not ask you to scan a QR code for a refund.</p></div>
-   <button class="btn" style="margin-top:auto" data-a="trap-again">Play again</button></div></div>`;
+   <div class="card" style="margin-top:18px;text-align:center" data-testid="${intro?'intro-result':'trap-end'}">
+    <p class="eyebrow">Your score</p>
+    <h2 style="font-size:36px;margin:6px 0" data-testid="trap-score">${G.score} / ${n}</h2>
+    <p style="font-size:17px;line-height:1.45">${intro?t('introNice',G.score,n):(G.score===n?'You caught every trap. That is a rare skill.':'A miss is practice. The same traps show up in real life.')}</p>
+    ${!intro?`<p style="font-size:15px;margin-top:12px">A SIP is a small, regular investment. It does not promise profit. A real bank will not ask you to scan a QR code for a refund.</p>`:''}
+    ${shareBtns}
+   </div>${cta}</div></div>`;
+  if(!intro||challenge)setTimeout(()=>buildTrapShare(G),40);
   return;
  }
- const fb=G.verdict==null?'':`<div class="whybox ${G.verdict===c.ans?'fb-ok':'fb-no'}" data-testid="trap-why"><b>${G.verdict===c.ans?'Yes.':'Not this time.'}</b> ${c.why}</div>`;
- ov.innerHTML=`<div class="screen"><div class="gwrap"><div class="ghead">${backBtn()}<div class="gmeta"><span class="eyebrow">Spot the Trap</span><div style="font-weight:800">${G.i+1}&nbsp;of&nbsp;${n} \u00b7 Swipe Trap or Smart</div></div><b class="gcount" data-testid="trap-sofar">${G.score} right</b></div>
-  <div class="trap-card" id="trapcard"><div class="scene ${G.verdict==null?'':(G.verdict===c.ans?'flash-smart':'flash-trap')}" data-testid="trap-scene"><span class="valbadge">${c.value}</span><p class="mute" style="font-size:13px;margin:0 0 6px">${c.title}</p><h2 style="font-size:22px;line-height:1.3;margin:0">${c.scene}</h2>${fb}</div>
+ const fb=G.verdict==null?'':`<div class="whybox ${G.verdict===raw.ans?'fb-ok':'fb-no'}" data-testid="trap-why"><b>${G.verdict===raw.ans?t('yes'):t('notThis')}</b> ${c.why}</div>`;
+ ov.innerHTML=`<div class="screen" data-testid="${intro?'intro-trap':'trap-play'}"><div class="gwrap"><div class="ghead">${backBtn()}<div class="gmeta"><span class="eyebrow">Spot the Trap</span><div style="font-weight:800">${G.i+1}&nbsp;of&nbsp;${n} · ${t('trapOrSmart')}</div></div><b class="gcount" data-testid="trap-sofar">${G.score} right</b></div>
+  <div class="trap-card" id="trapcard"><div class="scene ${G.verdict==null?'':(G.verdict===raw.ans?'flash-smart':'flash-trap')}" data-testid="trap-scene"><span class="valbadge">${c.value}</span><p class="mute" style="font-size:13px;margin:0 0 6px">${c.title}</p><h2 style="font-size:22px;line-height:1.3;margin:0">${c.scene}</h2>${fb}</div>
   ${G.verdict==null?`<div class="trap-btns"><button class="btn trap" data-a="trap-ans" data-v="trap" data-testid="ans-trap">Trap</button><button class="btn smart" data-a="trap-ans" data-v="smart" data-testid="ans-smart">Smart</button></div>`:`<button class="btn" style="margin-top:14px" data-a="trap-next" data-testid="trap-next">${G.i===n-1?'See my score':'Next'}</button>`}
-  <p class="mute" style="font-size:13px;text-align:center;margin-top:10px">Swipe left for Trap, right for Smart \u00b7 or use the buttons</p></div></div></div>`;
+  <p class="mute" style="font-size:13px;text-align:center;margin-top:10px">Swipe left for Trap, right for Smart · or use the buttons</p></div></div></div>`;
  if(G.verdict==null)setupTrapSwipe();
 }
+
 let trapSwipeOff=null;
 function setupTrapSwipe(){
  if(trapSwipeOff){trapSwipeOff();trapSwipeOff=null}
@@ -783,9 +958,11 @@ function setupTrapSwipe(){
 }
 function trapAns(v){
  const G=OV&&OV.g;if(!G||G.locked||G.verdict!=null)return;
- const c=TRAP_CARDS[G.i];if(!c)return;
+ const c=trapDeck()[G.i];if(!c)return;
  G.verdict=v;G.locked=true;
- if(v===c.ans){G.score++;beep('ok')}else beep('bad');
+ G.marks=G.marks||[];
+ const ok=v===c.ans;G.marks[G.i]=ok;
+ if(ok){G.score++;beep('ok')}else beep('bad');
  if(trapSwipeOff){trapSwipeOff();trapSwipeOff=null}
  renderTrap();
 }
@@ -870,7 +1047,11 @@ function renderRecap(){
   <div class="stat"><div><b data-testid="recap-stories">${w.stories||0}</b><span>Stories</span></div><div><b>${w.listens||0}</b><span>Listens</span></div><div><b>${w.actions||0}</b><span>Actions</span></div></div>
   <div class="stat"><div><b>${w.plays||0}</b><span>Games</span></div><div><b>${w.xp||0}</b><span>XP this week</span></div><div><b>${st.cur}</b><span>Streak</span></div></div>
   ${newT.length?`<p class="sec-t">New trait cards</p><div class="tgrid">${newT.map(k=>traitCard(k,true)).join('')}</div>`:'<p class="mute" style="margin-top:16px">Finish a story or a game this week to grow the set.</p>'}
-  <button class="btn ghost" style="margin-top:auto" data-a="sharecard">${ic('share')}Share a card</button>
+  <div class="share-actions" style="margin-top:auto">
+   <button class="btn" data-a="recap-share-wa" data-testid="recap-share-wa">Share to WhatsApp</button>
+   <button class="btn ghost sm" data-a="sharecard" data-testid="recap-share-ig">Instagram Story</button>
+   <button class="btn ghost sm" data-a="trap-challenge" data-testid="recap-challenge">Challenge a friend</button>
+  </div>
  </div></div>`;
 }
 function renderShare(){
@@ -907,14 +1088,16 @@ function buildShareImage(){
 function openMystery(){
  const day=today(),m=mysteryFor(day);
  const first=!m.opened;m.opened=true;save();
- if(first){addXP(m.xp);if(m.trait&&grantTrait(m.trait))setTimeout(()=>showTrait(m.trait),500);maybeGoal()}
+ if(first){addXP(m.xp);if(m.trait&&grantTrait(m.trait))setTimeout(()=>showTrait(m.trait),500);maybeStreak()}
  const body=m.trait?`${traitCard(m.trait,true,true)}<p class="mute" style="text-align:center;margin-top:8px">+${m.xp} XP</p>`:`<h3 style="font-size:22px;line-height:1.35;margin:8px 0 12px">${m.text}</h3><p class="xp">+${m.xp} XP</p>`;
  openSheet(`<p class="eyebrow" style="text-align:center">Mystery card</p><div data-testid="mystery-reveal">${body}</div><p class="mute" style="font-size:14px;margin-top:12px">${m.text&&m.trait?m.text:''}</p><button class="btn" style="margin-top:14px" data-a="closesheet" data-testid="mystery-ok">Nice</button>`);
 }
 function nextDay(){
- const d=today(),g=goalOf(d),st=streaks();
- if(!g.done && st.cur>0){
-  if((S.freeze||0)>0){S.freeze--;const rec=S.daily[d]=S.daily[d]||{};rec.frozen=true;rec.goal=true;if(!S.traits.comeback)grantTrait('comeback');toast('Streak freeze used. Your streak is safe.');}
+ const d=today(),st=streaks();
+ if(!dayDone(d) && st.cur>0){
+  if((S.pauseLeft||0)>0){S.pauseLeft--;const rec=S.daily[d]=S.daily[d]||{};rec.paused=true;toast('Exam pause kept your streak.');}
+  else if((S.freeze||0)>0){S.freeze--;const rec=S.daily[d]=S.daily[d]||{};rec.frozen=true;if(!S.traits.comeback)grantTrait('comeback');toast('Streak freeze used. Your streak is safe.');}
+  else {S.repair={need:2,got:0,save:st.cur,miss:d}}
  }
  if(S.kite&&S.kite.p1&&!S.kite.p2)S.kite.p2ready=true;
  const next=S.offset+1;
@@ -936,16 +1119,142 @@ async function share(id){
 }
 
 /* ---------- events ---------- */
+
+function demoUrl(extra){
+ const u=new URL(location.href);u.hash='';
+ if(extra){Object.entries(extra).forEach(([k,v])=>u.searchParams.set(k,v))}
+ else u.search='';
+ return u.toString();
+}
+function askRemind(){
+ track('reminder_optin',{hour:S.remindHour||21});
+ S.remind=true;save();
+ const msg=t('remindOk');
+ if(window.Notification&&Notification.permission==='default'){
+  Notification.requestPermission().then(p=>{toast(msg)}).catch(()=>toast(msg));
+ }else toast(msg);
+ haptic('ok');
+}
+function viewParents(standalone){
+ const url=demoUrl({parents:'1'});
+ const mail='hello@ethossai.in';
+ const text="Hi, I'm looking at EthosSAI, a 1-minute stories demo for ages 14+. Data stays on the phone. Teen-safe mode hides 18+ stories and public leagues. Please read this page: "+url;
+ return`<div class="screen"><div class="scroll parent-page" style="padding:20px" data-testid="parents-page">
+  ${standalone?'<p class="eyebrow">EthosSAI · Demo</p>':backBtn()}
+  <h1 class="h-title" style="margin:8px 0 12px">${t('parents')}</h1>
+  <p>EthosSAI is a short daily habit: one 1-minute story or money-trap game, then one small real-life step. ${t('ageLine')}</p>
+  <p><b>What's inside.</b> Swipe stories, audio stories, choice episodes, and Spot the Trap (real India money situations: UPI/QR refunds, fake prizes, EMI, betting tips, fake internships). Nothing here is a financial advisor, and a SIP does not promise profit.</p>
+  <p><b>Data stays on this phone.</b> This demo saves progress in the phone's own storage. It does not create an account, and it does not send your child's name, age or choices to a server.</p>
+  <p><b>How 18+ is locked.</b> Anyone under 18 is in teen-safe mode. Love stories, public leagues and any purchase screens stay hidden. Under-18s are not shown stranger leaderboards.</p>
+  <p><b>Contact.</b> <a href="mailto:${mail}" style="color:var(--amber)">${mail}</a></p>
+  <p class="mute" style="font-size:13px">This page is for parents and guardians. It is not legal advice.</p>
+  <a class="btn" style="margin-top:16px;text-decoration:none" data-testid="send-parent-wa" href="https://wa.me/?text=${encodeURIComponent(text)}" target="_blank" rel="noopener">${t('sendParent')} · WhatsApp</a>
+  <a class="btn ghost sm" style="margin-top:8px;text-decoration:none" data-testid="send-parent-mail" href="mailto:?subject=${encodeURIComponent('EthosSAI — a note for parents')}&body=${encodeURIComponent(text)}">${t('sendParent')} · Email</a>
+  ${standalone?`<button class="btn ghost sm" style="margin-top:16px" data-a="parents-home">Back to the demo</button>`:''}
+ </div></div>`;
+}
+function openFeedback(){
+ if(!OV||OV.type!=='feedback'){openOverlay({type:'feedback'});return}
+ const rows=JSON.parse(localStorage.getItem('ethossai_feedback')||'[]');
+ const pay=adult()?`<label>Would you pay for this?</label>
+   <div class="stars" data-testid="fb-pay">${['No','Maybe','Yes'].map(x=>`<button type="button" data-a="fb-pay" data-v="${x}">${x}</button>`).join('')}</div>`:'';
+ ov.innerHTML=`<div class="screen"><div class="gwrap">${backBtn()}<h1 class="h-title" style="font-size:24px;flex:1">${t('feedback')}</h1>
+  <form class="fb-form" data-testid="feedback-form" onsubmit="return false">
+   <label>What did you love?</label><textarea id="fb-love" maxlength="400"></textarea>
+   <label>What was boring?</label><textarea id="fb-bore" maxlength="400"></textarea>
+   <label>Would you use it daily?</label>
+   <div class="stars" data-testid="fb-daily">${[1,2,3,4,5].map(n=>`<button type="button" data-a="fb-star" data-v="${n}">${n}</button>`).join('')}</div>
+   ${pay}
+   <button class="btn" style="margin-top:16px" data-a="fb-save" data-testid="fb-save">Save on this phone</button>
+   <button class="btn ghost sm" style="margin-top:8px" data-a="fb-export" data-testid="feedback-export">Export ${rows.length?rows.length+' saved':''}</button>
+   <p class="mute" style="font-size:13px;margin-top:10px">Saved only on this device. There is no Google Form connected yet.</p>
+  </form></div></div>`;
+}
+function saveFeedback(){
+ const daily=[...document.querySelectorAll('[data-a=fb-star].on')].map(x=>x.dataset.v)[0];
+ const pay=adult()?(([...document.querySelectorAll('[data-a=fb-pay].on')].map(x=>x.dataset.v)[0])||''):'';
+ const row={loved:($('#fb-love')||{}).value||'',boring:($('#fb-bore')||{}).value||'',daily:daily?+daily:null,pay,age:S.age,t:Date.now()};
+ const rows=JSON.parse(localStorage.getItem('ethossai_feedback')||'[]');rows.push(row);
+ localStorage.setItem('ethossai_feedback',JSON.stringify(rows));
+ toast('Feedback saved on this phone.');haptic('ok');closeOverlay();
+}
+function exportFeedback(){
+ const rows=localStorage.getItem('ethossai_feedback')||'[]';
+ const blob=new Blob([rows],{type:'application/json'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ethossai-feedback.json';a.click();
+}
+function buildTrapShare(G){
+ const n=(G.cards||TRAP_CARDS).length,score=G.score,marks=G.marks||[];
+ const c=document.createElement('canvas');c.width=720;c.height=1280;
+ const x=c.getContext('2d');
+ const g=x.createLinearGradient(0,0,0,1280);g.addColorStop(0,'#0B1A3A');g.addColorStop(1,'#0A1028');
+ x.fillStyle=g;x.fillRect(0,0,720,1280);
+ x.fillStyle='#F2B544';x.font='800 22px Outfit,sans-serif';x.fillText('EthosSAI  ·  DEMO',48,80);
+ x.fillStyle='#F6EFE0';x.font='800 52px Syne,sans-serif';
+ const lines=['I spotted',score+'/'+n,'money traps.','Can you?'];
+ lines.forEach((ln,i)=>{x.fillText(ln,48,220+i*70)});
+ const grid=marks.map(ok=>ok?'🟩':'🟥').join('')||'🟩'.repeat(score)+'🟥'.repeat(Math.max(0,n-score));
+ x.font='64px sans-serif';x.fillText(grid,48,620);
+ x.fillStyle='#B8C0D4';x.font='600 24px Outfit,sans-serif';
+ x.fillText('1 minute a day. No install needed.',48,1180);
+ const url=c.toDataURL('image/png');
+ const img=$('#trap-share-img'),a=$('#trap-share-dl');
+ if(img){img.src=url;img.style.display='block';img.style.width='100%';img.style.borderRadius='18px';img.style.marginTop='12px'}
+ if(a)a.href=url;
+ OV.shareUrl=url;OV.shareText='I spotted '+score+'/'+n+' money traps. Can you? '+demoUrl({play:'trap'});
+}
+function shareTrap(kind){
+ const text=OV.shareText||('I spotted some money traps. Can you? '+demoUrl({play:'trap'}));
+ track('share',{kind,game:'trap'});
+ if(kind==='wa'){location.href='https://wa.me/?text='+encodeURIComponent(text);return}
+ if(kind==='ig'){
+  const a=$('#trap-share-dl');if(a&&a.href)a.click();
+  toast('Image ready. Open Instagram and add it to a story.');return
+ }
+ if(kind==='challenge'){location.href='https://wa.me/?text='+encodeURIComponent('Can you beat me at Spot the Trap? '+demoUrl({play:'trap'}));}
+}
+function showDebug(){S.debug=true;if(S.onboarded)save();render();toast('Demo tools unlocked.')}
+function openPause(){
+ openSheet(`<h3>${t('pauseExams')}</h3><p class="mute" style="margin:0 0 12px">${t('pauseSub')}</p>
+  ${[1,2,3,5,7].map(n=>`<button class="row" data-a="pause-set" data-v="${n}">${n} day${n>1?'s':''}</button>`).join('')}
+  <button class="btn ghost sm" style="margin-top:12px" data-a="closesheet">Close</button>`);
+}
+
+function renderLook(){ov.innerHTML=`<div class="screen"><div class="ob">${lookPanel(true)}</div></div>`}
+
 document.addEventListener('click',e=>{
  const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,v=b.dataset.v;
  switch(a){
  case'go':go(v);break;
+ case'tryone':case'trychip':startIntroTrap(false);if(v){S.interests=S.interests||[];if(v&&!S.interests.includes(v))S.interests=[v]};break;
+ case'setlang':S.lang=v==='hi'?'hi':'en';if(S.onboarded)save();if(OV)renderOverlay();else render();break;
+ case'pickint':{S.interests=S.interests||[];const i=S.interests.indexOf(v);if(i>=0)S.interests.splice(i,1);else if(S.interests.length<2)S.interests.push(v);render();break}
+ case'pickcue':S.cue=v;render();break;
+ case'intro-continue':closeOverlay(true);OB.step=1;track('onboarding_step',{step:'age'});render();break;
+ case'heroplay':openHero(heroItem());break;
+ case'togglemore':S.moreOpen=!S.moreOpen;render();break;
+ case'goal3':S.goalN=3;S.offeredGoal3=true;save();render();break;
+ case'goal1':S.offeredGoal3=true;save();render();break;
+ case'remind':askRemind();break;
+ case'parents':openOverlay({type:'parents'});break;
+ case'parents-home':{const u=new URL(location.href);u.searchParams.delete('parents');history.replaceState({},'',u);QS.delete('parents');render();break}
+ case'feedback':openFeedback();break;
+ case'fb-star':case'fb-pay':document.querySelectorAll(`[data-a="${a}"]`).forEach(x=>x.classList.toggle('on',x===b));break;
+ case'fb-save':saveFeedback();break;
+ case'fb-export':exportFeedback();break;
+ case'pause-exams':openPause();break;
+ case'pause-set':S.pauseLeft=+v;save();closeSheet();toast('Paused for '+v+' day'+(+v>1?'s':'')+'.');render();break;
+ case'trap-share-wa':shareTrap('wa');break;
+ case'trap-share-ig':shareTrap('ig');break;
+ case'trap-challenge':shareTrap('challenge');break;
+ case'challenge-daily':{const u=new URL(location.href);u.searchParams.delete('play');history.replaceState({},'',u);QS.delete('play');closeOverlay(true);if(!S.onboarded){OB.step=0;render()}else {tab='today';render()}break}
+ case'demodots':{showDebug._n=(showDebug._n||0)+1;if(showDebug._n>=5){showDebug._n=0;showDebug()}break}
  case'obnext':if(OB.step===1&&!ageMsg(S.age).ok)break;OB.step++;render();break;
  case'obskip':if(OB.step===0){OB.step=1;render()}else finishOb();break;
  case'obback':OB.step--;render();break;
- case'g':S.av.g=v;save();OB.step===1?refreshLook():refreshOvLook();break;
- case'skin':S.av.skin=v;save();OB.step===1?refreshLook():refreshOvLook();break;
- case'hood':S.av.hoodie=v;save();OB.step===1?refreshLook():refreshOvLook();break;
+ case'g':S.av.g=v;if(S.onboarded)save();OV?refreshOvLook():refreshLook();break;
+ case'skin':S.av.skin=v;if(S.onboarded)save();OV?refreshOvLook():refreshLook();break;
+ case'hood':S.av.hoodie=v;if(S.onboarded)save();OV?refreshOvLook():refreshLook();break;
  case'obdone':finishOb();break;
  case'editlook':openOverlay({type:'look'});break;
  case'looksave':S.name=$('#nm').value.trim();save();closeOverlay();break;
@@ -992,12 +1301,20 @@ document.addEventListener('click',e=>{
  case'focus-again':stopFocus();OV.f=null;renderFocus();break;
  case'league':openOverlay({type:'league'});break;
  case'recap':openOverlay({type:'recap'});break;
+ case'recap-share-wa':{track('share',{kind:'wa',type:'recap'});location.href='https://wa.me/?text='+encodeURIComponent('I grew this week on EthosSAI (demo). Can you? '+demoUrl({play:'trap'}));break}
  case'sharecard':openOverlay({type:'share'});break;
  case'togglesound':S.sound=!S.sound;save();render();break;
- case'reset':if(confirm('Reset all demo data on this device?')){A.pause();P=null;A.removeAttribute('src');S=fresh();OB={step:0};save();tab='today';closeOverlay(true);render()}break;
+ case'reset':if(confirm('Reset all demo data on this device?')){A.pause();P=null;A.removeAttribute('src');try{localStorage.removeItem(KEY)}catch(e){}S=fresh();OB={step:0};tab='today';closeOverlay(true);render()}break;
  }
 });
-function finishOb(){if(!ageMsg(S.age).ok){OB.step=1;render();return}const n=$('#nm');if(n)S.name=n.value.trim();S.onboarded=true;save();tab='today';lastTab=null;render()}
+function finishOb(){
+ if(!ageMsg(S.age).ok){OB.step=1;render();return}
+ const n=$('#nm');if(n)S.name=n.value.trim();
+ const hours={class:16,commute:18,dinner:20,bed:22};
+ if(S.cue&&hours[S.cue])S.remindHour=hours[S.cue];
+ S.onboarded=true;save();track('onboarding_step',{step:'complete',interests:S.interests,cue:S.cue});
+ tab='today';lastTab=null;render();haptic('win');
+}
 function refreshLook(){const w=$('#avwrap');if(w)w.innerHTML=avatar(S.av);document.querySelectorAll('.sw button,.seg button').forEach(x=>{const act=x.dataset.a,val=x.dataset.v;x.classList.toggle('on',(act==='g'&&S.av.g===val)||(act==='skin'&&S.av.skin===val)||(act==='hood'&&S.av.hoodie===val))})}
 function refreshOvLook(){const nm=$('#nm')?$('#nm').value:'';const inner=ov.querySelector('.ob');if(inner){inner.innerHTML=`<div class="steps">${backBtn()}</div>${lookPanel(true)}`;$('#nm').value=nm}}
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='nm'){e.preventDefault()}});
@@ -1007,11 +1324,14 @@ document.addEventListener('input',e=>{
 });
 
 render();
-// service worker not used; keep the demo simple
+if(QS.get('play')==='trap'&&QS.get('parents')!=='1')startIntroTrap(true);
 window.__ethos={get state(){return S},audio:A,get player(){return P},complete,doAction,nextDay,goalOf,today,addXP,grantTrait,
  finishFocus(secs){if(!OV||OV.type!=='focus'||!OV.f)return false;stopFocus();OV.f.focused=secs;OV.f.running=false;OV.f.over=true;renderFocus();return true},
  finishListen(){if(P)pFinish()},
  dismiss(){pendingLevel=null;sheet.classList.remove('show');sheet.innerHTML=''},
  nudgeEoc(){return maybeEocPause()},
- fireTimer(){return fireSleepTimer()}};
+ fireTimer(){return fireSleepTimer()},
+ showDebug,track,startIntroTrap,t,lang,render,
+ finishTrap(){if(!OV||OV.type!=='trap'||!OV.g)return false;const deck=trapDeck();OV.g.marks=deck.map(()=>true);OV.g.score=deck.length;OV.g.i=deck.length;OV.g.verdict=null;OV.g.locked=false;renderTrap();return true},
+ setLang(v){S.lang=v==='hi'?'hi':'en';if(S.onboarded)save();render()}};
 })();
