@@ -31,6 +31,7 @@ const I={
 };
 const ic=(n,c='')=>`<svg class="i ${c}" viewBox="0 0 24 24" aria-hidden="true">${I[n]}</svg>`;
 const icf=n=>ic(n,'f');
+const im=(src,alt='',lazy=true)=>`<img src="${src}" alt="${String(alt).replace(/"/g,'&quot;')}" decoding="async"${lazy?' loading="lazy"':''}>`;
 const backBtn=(cls='')=>`<button class="backb ${cls}" data-a="closeov" data-testid="back" aria-label="Back">${ic('back')}<span>Back</span></button>`;
 
 /* ---------- content ---------- */
@@ -192,6 +193,7 @@ function grantTrait(k){
  save();return true;
 }
 let toastT;
+function clearToast(){clearTimeout(toastT);const b=$('#toastbox');if(b)b.innerHTML=''}
 function toast(m){const b=$('#toastbox');if(!b)return;b.innerHTML=`<div class="toast" role="status">${m}</div>`;clearTimeout(toastT);toastT=setTimeout(()=>b.innerHTML='',2400)}
 function complete(layer,id,xp){
  const k=layer+':'+id;const d=S.daily[today()]=S.daily[today()]||{};d[layer]=id;
@@ -309,10 +311,10 @@ function avatar(a,cls='avatar'){
 /* ---------- routing ---------- */
 let tab='today',OB={step:0,edit:false},OV=null,lastTab=null;
 const app=$('#app'),ov=$('#overlay'),sheet=$('#sheet');
-function go(t){tab=t;closeOverlay(true);render()}
+function go(t){tab=t;clearToast();closeOverlay(true);render()}
 function openOverlay(o){OV=o;renderOverlay();updateMini()}
 function closeOverlay(silent){
- stopFocus();
+ stopFocus();clearToast();if(trapSwipeOff){trapSwipeOff();trapSwipeOff=null}
  const had=ov.classList.contains('show');OV=null;
  if(had&&!reduced){ov.classList.add('out');setTimeout(()=>{if(!OV){ov.classList.remove('show','out');ov.innerHTML=''}},190)}
  else{ov.classList.remove('show','out');ov.innerHTML=''}
@@ -354,7 +356,7 @@ function viewOnboarding(){
  if(s===0)return`<div class="ob" data-ob="0">${top}
   <p class="eyebrow">EthosSAI \u00b7 Demo</p>
   <h1 class="hero-h" style="margin-top:4px">A swipeable story, one tiny action, and you\u2019re <em>done for today.</em></h1>
-  <div class="fan"><img src="img/fan1.webp" alt=""><img src="img/ep/e2endB.webp" alt=""><img src="img/fan3.webp" alt=""><span>SWIPE</span><span>WATCH</span><span>LISTEN</span></div>
+  <div class="fan">${im("img/fan1.webp","",false)}${im("img/ep/e2endB.webp","",false)}${im("img/fan3.webp","",false)}<span>SWIPE</span><span>WATCH</span><span>LISTEN</span></div>
   <p class="mute" style="font-size:16px;line-height:1.5;margin-bottom:auto">Swipe it, listen to it, or watch it. Then do one small thing for real. For ages 14 and up.</p>
   <button class="btn" data-a="obnext" data-testid="start">Start</button>
   <p class="mute small" style="text-align:center;margin-top:10px">This is a demo with sample stories. Your choices stay on this phone.</p></div>`;
@@ -396,12 +398,12 @@ function viewToday(){
  const hour=S.demoHour!=null?S.demoHour:new Date().getHours();
  const night=hour>=21&&st.cur>0&&!g.done;
  const task=(layer,ic_,kind,title,sub,img,id)=>`<button class="card task ${d[layer]?'done':''}" data-a="open" data-layer="${layer}" data-id="${id}">
-  <div class="th"><img src="${img}" alt=""></div><div class="tb"><span class="kind">${ic(ic_)}${kind}</span><h3>${title}</h3><small>${sub}</small></div>${d[layer]?`<span class="tick">${ic('check')}</span>`:''}</button>`;
+  <div class="th">${im(img,"",layer!=="read")}</div><div class="tb"><span class="kind">${ic(ic_)}${kind}</span><h3>${title}</h3><small>${sub}</small></div>${d[layer]?`<span class="tick">${ic('check')}</span>`:''}</button>`;
  const act=(layer,key,txt)=>{const unlocked=!!d[layer],on=!!S.actions[key];return`<button class="act ${on?'on':''} ${unlocked?'':'lock'}" data-a="act" data-key="${key}" ${unlocked?'':'disabled'}>
   <span class="cb">${ic('check')}</span><div><small>${layer==='read'?'After you swipe':layer==='listen'?'After you listen':'After you watch'}</small><p>${unlocked?txt:'Finish the '+({read:'story',listen:'audio story',watch:'episode'})[layer]+' to unlock this.'}</p></div></button>`};
  const myst=mysteryFor(today());
  const circ=2*Math.PI*30,dash=circ*(1-g.n/3);
- const p2card=(kite.p2ready&&!kite.p2&&rd.id!=='s1')?`<button class="card task" data-a="open" data-layer="read" data-id="s1" data-testid="part2-ready"><div class="th"><img src="img/cards/s1_07.webp" alt=""></div><div class="tb"><span class="kind">${ic('book')}Part 2 is ready</span><h3>The Kite That Copied</h3><small>Finish the story you left last night</small></div></button>`:'';
+ const p2card=(kite.p2ready&&!kite.p2&&rd.id!=='s1')?`<button class="card task" data-a="open" data-layer="read" data-id="s1" data-testid="part2-ready"><div class="th">${im("img/cards/s1_07.webp","")}</div><div class="tb"><span class="kind">${ic('book')}Part 2 is ready</span><h3>The Kite That Copied</h3><small>Finish the story you left last night</small></div></button>`:'';
  return`<p class="mute" style="font-size:13px">${dateLbl}</p>
  <h1 class="h-title" style="margin-top:2px">Hey ${S.name||'there'}, here\u2019s today.</h1>
  ${teen()?`<p class="note good" style="margin:10px 0 0" data-testid="teen-banner">${ic('lock')}<span>Teen-safe mode is on. Stories for 18 and up are hidden.</span></p>`:''}
@@ -436,21 +438,21 @@ function viewToday(){
 /* ---------- Read ---------- */
 function viewRead(){
  return`<h1 class="h-title" style="margin-top:6px">Swipe a story</h1><p class="mute" style="margin:6px 0 16px;font-size:16px;line-height:1.5">Short stories on cards. Each one ends with one small thing to do.</p>
- ${STORIES.map(s=>{const ks=S.kite||{};let meta=`10 cards \u00b7 about ${s.mins} min`;if(s.id==='s1'){if(ks.p2)meta='Part 1 + Part 2 \u00b7 done';else if(ks.p2ready)meta='Part 2 is ready';else if(ks.p1)meta='Part 1 done \u00b7 Part 2 unlocks tomorrow';else meta='Part 1 \u00b7 6 cards + a cliffhanger'}else if(S.done['read:'+s.id])meta+=' \u00b7 <b style="color:var(--amber)">Done</b>';return `<button class="card lib" data-a="open" data-layer="read" data-id="${s.id}"><img src="${s.hero}" alt=""><div><span class="eyebrow">${s.tag}</span><h3>${s.title}</h3><span class="meta">${meta}</span></div></button>`}).join('')}
+ ${STORIES.map(s=>{const ks=S.kite||{};let meta=`10 cards \u00b7 about ${s.mins} min`;if(s.id==='s1'){if(ks.p2)meta='Part 1 + Part 2 \u00b7 done';else if(ks.p2ready)meta='Part 2 is ready';else if(ks.p1)meta='Part 1 done \u00b7 Part 2 unlocks tomorrow';else meta='Part 1 \u00b7 6 cards + a cliffhanger'}else if(S.done['read:'+s.id])meta+=' \u00b7 <b style="color:var(--amber)">Done</b>';return `<button class="card lib" data-a="open" data-layer="read" data-id="${s.id}">${im(s.hero,s.title)}<div><span class="eyebrow">${s.tag}</span><h3>${s.title}</h3><span class="meta">${meta}</span></div></button>`}).join('')}
  <p class="sec-t">Coming soon</p>${SOON_READ.map(t=>`<div class="soon">${ic('lock')}${t}</div>`).join('')}`;
 }
 /* ---------- Listen ---------- */
 function viewListen(){
  return`<h1 class="h-title" style="margin-top:6px">Listen</h1><p class="mute" style="margin:6px 0 14px;font-size:16px;line-height:1.5">Stories to hear at the gym, on a run or on the bus.</p>
  <div class="modes">${MODES.map(m=>`<button data-a="mode" data-v="${m.id}" class="${(S.mode||'com')===m.id?'on':''}"><span>${m.n}</span><small>${m.d}</small></button>`).join('')}</div>
- ${STORIES.map(s=>{const tot=s.chapters.reduce((a,c)=>a+c.dur,0);return`<button class="card lib" data-a="open" data-layer="listen" data-id="${s.id}"><img src="${s.hero}" alt=""><div><span class="eyebrow">Audio story \u00b7 10 chapters</span><h3>${s.title}</h3><span class="meta">${fmt(tot)} \u00b7 Indian-English voice ${S.done['listen:'+s.id]?'\u00b7 <b style="color:var(--amber)">Heard</b>':''}</span></div></button>`}).join('')}
+ ${STORIES.map(s=>{const tot=s.chapters.reduce((a,c)=>a+c.dur,0);return`<button class="card lib" data-a="open" data-layer="listen" data-id="${s.id}">${im(s.hero,s.title)}<div><span class="eyebrow">Audio story \u00b7 10 chapters</span><h3>${s.title}</h3><span class="meta">${fmt(tot)} \u00b7 Indian-English voice ${S.done['listen:'+s.id]?'\u00b7 <b style="color:var(--amber)">Heard</b>':''}</span></div></button>`}).join('')}
  <p class="mute" style="font-size:13px;margin-top:2px">The voice is made by AI (a sample voice).</p>
  <p class="sec-t">Coming soon</p>${SOON_LISTEN.map(t=>`<div class="soon">${ic('lock')}${t}</div>`).join('')}`;
 }
 /* ---------- Watch ---------- */
 function viewWatch(){
  return`<h1 class="h-title" style="margin-top:6px">Watch</h1><p class="mute" style="margin:6px 0 16px;font-size:16px;line-height:1.5">1-minute anime stories. You choose what happens. There is no wrong answer.</p>
- ${visEps().map(e=>`<button class="card lib" data-a="open" data-layer="watch" data-id="${e.id}"><img src="${e.thumb}" alt=""><div><span class="eyebrow">${e.series}</span><h3>${e.title}</h3><span class="meta">${e.hook}</span><div class="pillrow" style="margin-top:6px"><span class="pill">+${e.xp} XP</span>${e.adult?'<span class="pill">18+</span>':''}${S.done['watch:'+e.id]?'<span class="pill" style="color:var(--amber)">Watched</span>':''}</div></div></button>`).join('')}
+ ${visEps().map(e=>`<button class="card lib" data-a="open" data-layer="watch" data-id="${e.id}">${im(e.thumb,e.title)}<div><span class="eyebrow">${e.series}</span><h3>${e.title}</h3><span class="meta">${e.hook}</span><div class="pillrow" style="margin-top:6px"><span class="pill">+${e.xp} XP</span>${e.adult?'<span class="pill">18+</span>':''}${S.done['watch:'+e.id]?'<span class="pill" style="color:var(--amber)">Watched</span>':''}</div></div></button>`).join('')}
  <p class="mute" style="font-size:13px">These are motion comics made from AI pictures, not video.</p>`;
 }
 /* ---------- You ---------- */
@@ -485,7 +487,7 @@ function viewYou(){
   <button class="btn ghost sm" data-a="togglesound">${S.sound?'Sounds on':'Sounds off'}</button>
   <button class="btn ghost sm" data-a="reset" style="border-color:rgba(255,255,255,.25);color:var(--mute)">Reset demo</button></div>`;
 }
-function traitCard(k,on,big){const t=TRAITS[k];const rar=t.rarity||'common';return`<div class="trait ${on?'':'lock'} ${big?'big':''}" data-trait="${k}"><img src="${t.img}" alt=""><span class="tag">${on?t.tag:'LOCKED'}</span>${on?`<span class="rar rarity ${rar}">${rar}</span>`:`<span class="lk">${ic('lock')}</span>`}<div class="tt"><b>${on?t.name:'???'}</b><span>${on?t.line:'Keep going to unlock.'}</span></div></div>`}
+function traitCard(k,on,big){const t=TRAITS[k];const rar=t.rarity||'common';return`<div class="trait ${on?'':'lock'} ${big?'big':''}" data-trait="${k}">${im(t.img,on?t.name:'Locked trait')}<span class="tag">${on?t.tag:'LOCKED'}</span>${on?`<span class="rar rarity ${rar}">${rar}</span>`:`<span class="lk">${ic('lock')}</span>`}<div class="tt"><b>${on?t.name:'???'}</b><span>${on?t.line:'Keep going to unlock.'}</span></div></div>`}
 
 /* ---------- overlays ---------- */
 function renderOverlay(){
@@ -513,15 +515,15 @@ function kiteMode(s){
 function renderReader(){
  const s=STORIES.find(x=>x.id===OV.id);const mode=kiteMode(s);
  let chapters,finale,recap=false,title=s.title,tag=s.tag;
- if(mode==='p1'){chapters=s.chapters.slice(0,6);finale='cliff';title='The Kite That Copied \u00b7 Part 1'}
- else if(mode==='p2'){chapters=s.chapters.slice(6);finale='take';recap=true;title='The Kite That Copied \u00b7 Part 2'}
+ if(mode==='p1'){chapters=s.chapters.slice(0,6);finale='cliff';title=s.title+' \u00b7 Part 1'}
+ else if(mode==='p2'){chapters=s.chapters.slice(6);finale='take';recap=true;title=s.title+' \u00b7 Part 2'}
  else {chapters=s.chapters;finale='take'}
  const extra=recap?1:0;
  R={s,i:OV.i||0,n:chapters.length+extra+1,mode,finale,chapters};
  const recapSlide=recap?`<div class="slide"><div class="final"><div class="card lesson"><span class="eyebrow">Last time</span><h2>The string snapped.</h2><p style="font-size:16px;line-height:1.45;margin:8px 0 0">Kabir\u2019s patchwork kite fell into a lane below. The sky went quiet. Swipe to see what Baba Iqbal does next.</p></div></div></div>`:'';
- const slides=chapters.map(c=>`<div class="slide"><img src="${c.img}" alt="Card ${c.n}: ${c.text.replace(/"/g,'&quot;')}"></div>`).join('');
+ const slides=chapters.map((c,i)=>`<div class="slide">${im(c.img,'Card '+c.n+': '+c.text,i!==0)}</div>`).join('');
  const doneA=!!S.actions['act:read:'+s.id];
- const cliff=`<div class="slide"><div class="cliff" data-testid="cliffhanger"><img src="img/cards/s1_06.webp" alt="The kite falls"><div class="cc"><span class="eyebrow">Cliffhanger</span><h2>The string snaps. The kite is gone.</h2><p style="font-size:16px;line-height:1.45;margin:0">What does Kabir do now? You will find out tomorrow.</p><div class="countdown" data-testid="p2-countdown">Part 2 unlocks tomorrow</div><p class="mute" style="font-size:13px;text-align:center;margin-top:10px">In this demo, use Simulate next day to unlock it. +${XP.p1} XP for Part 1.</p></div></div></div>`;
+ const cliff=`<div class="slide"><div class="cliff" data-testid="cliffhanger">${im("img/cards/s1_06.webp","The kite falls",false)}<div class="cc"><span class="eyebrow">Cliffhanger</span><h2>The string snaps. The kite is gone.</h2><p style="font-size:16px;line-height:1.45;margin:0">What does Kabir do now? You will find out tomorrow.</p><div class="countdown" data-testid="p2-countdown">Part 2 unlocks tomorrow</div><p class="mute" style="font-size:13px;text-align:center;margin-top:10px">In this demo, use Simulate next day to unlock it. +${XP.p1} XP for Part 1.</p></div></div></div>`;
  const fin=`<div class="slide"><div class="final" data-testid="final">
   <div class="card lesson"><span class="eyebrow">The takeaway</span><h2>${s.moral}</h2>
   <span class="eyebrow" style="color:var(--coral)">Try this today</span><p style="font-size:16px;line-height:1.45;margin:6px 0 14px">${s.action}</p>
@@ -529,8 +531,8 @@ function renderReader(){
   <div style="display:flex;gap:10px;margin-top:12px"><button class="btn ghost sm" data-a="share" style="flex:1">${ic('share')}Share</button><button class="btn sm" data-a="closeov" style="flex:1">Back to Today</button></div>
   <p class="mute" style="font-size:13px;text-align:center;margin-top:10px"><span class="xp" style="font-size:13px;padding:3px 10px">+${mode==='p2'?XP.p2:XP.read} XP</span> for finishing &middot; Pictures are made by AI</p></div></div>`;
  const last=finale==='cliff'?cliff:fin;
- ov.innerHTML=`<div class="screen"><div class="rd-top">${backBtn()}<div style="flex:1;min-width:0"><span class="eyebrow">Swipe &middot; ${tag}</span><div style="font-weight:800;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${title}</div></div><b class="mute" id="cnt" style="font-size:14px"></b></div>
-  <div class="car" id="car"><div class="track" id="track">${recapSlide}${slides}${last}</div>${S.hint?'':`<div class="swipehint" id="hint" data-testid="swipe-hint" role="note"><div class="hand">${ic("back")}${ic("back")}</div><p>Swipe left for the next card</p></div>`}</div>
+ ov.innerHTML=`<div class="screen"><div class="rd-top">${backBtn()}<div style="flex:1;min-width:0"><span class="eyebrow">Swipe &middot; ${tag}</span><div class="ttl">${title}</div></div><b class="mute" id="cnt" style="font-size:14px"></b></div>
+  <div class="car" id="car"><div class="track" id="track">${recapSlide}${slides}${last}</div>${S.hint?'':`<div class="swipehint" id="hint" data-testid="swipe-hint" role="note"><div class="hand">${ic("next")}</div><p>Swipe left for the next card</p></div>`}</div>
   <div class="dots" id="dots" role="tablist" aria-label="Card progress">${[...Array(R.n)].map((_,k)=>`<i></i>`).join('')}</div>
   <p class="hint">Swipe left or right, or tap the sides</p>
   <div class="rd-foot"><button class="iconb" data-a="rprev" aria-label="Previous card">${ic('back')}</button><span class="cnt" id="cnt2"></span><button class="iconb" data-a="rnext" aria-label="Next card">${ic('next')}</button></div></div>`;
@@ -594,6 +596,7 @@ A.addEventListener('ended',()=>{
  pLoad(P.ch+1,true)
 });
 function pFinish(){
+ clearSleepTimer();
  try{A.pause()}catch(e){}
  const r=complete('listen',P.s.id,XP.listen);pUI();
  if(r.first)toast('Story heard \u00b7 +'+XP.listen+' XP');
@@ -612,11 +615,23 @@ function pSeekTotal(t){
  for(let k=0;k<ch.length;k++){if(t<acc+ch[k].dur||k===ch.length-1){const off=Math.min(ch[k].dur-.3,t-acc);
   if(k===P.ch){A.currentTime=Math.max(0,off)}else{const was=!A.paused;pLoad(k,was,Math.max(0,off))}return}acc+=ch[k].dur}
 }
+function clearSleepTimer(){
+ if(!P)return;
+ if(P.tm){clearTimeout(P.tm);P.tm=null}
+ if(P.tick){clearInterval(P.tick);P.tick=null}
+ P.endsAt=null;
+}
+function fireSleepTimer(){
+ if(!P)return false;
+ clearSleepTimer();P.eoc=false;P.timerLabel='Off';
+ try{A.pause()}catch(e){}
+ toast('Sleep timer: paused. Good night.');pUI();return true;
+}
 function setTimer(m){
- clearTimeout(P.tm);P.eoc=false;
+ clearSleepTimer();P.eoc=false;
  if(m==='off'){P.timerLabel='Off'}
  else if(m==='eoc'){P.eoc=true;P.timerLabel='End of chapter'}
- else{P.timerLabel=m+' min';P.tm=setTimeout(()=>{A.pause();P.timerLabel='Off';toast('Sleep timer: paused. Good night.');pUI()},m*60000)}
+ else{P.timerLabel=m+' min';P.endsAt=Date.now()+m*60000;P.tm=setTimeout(fireSleepTimer,m*60000);P.tick=setInterval(()=>{if(!P||!P.endsAt)return;if(Date.now()>=P.endsAt)fireSleepTimer();else pUI()},1000)}
  pUI();toast('Sleep timer: '+P.timerLabel);closeSheet();
 }
 function pUI(){
@@ -631,7 +646,7 @@ function pUI(){
  set('p-cap',e=>e.textContent=P.s.chapters[P.ch].text);
  set('p-img',e=>{const src=P.s.chapters[P.ch].art;if(!e.src.endsWith(src))e.src=src});
  set('p-speed',e=>{e.querySelector('span').textContent=P.speed+'\u00d7'});
- set('p-timer',e=>{e.querySelector('span').textContent=P.timerLabel==='Off'?'Sleep':P.timerLabel;e.classList.toggle('on',P.timerLabel!=='Off')});
+ set('p-timer',e=>{let lab=P.timerLabel==='Off'?'Sleep':P.timerLabel;if(P.endsAt){const s=Math.max(0,Math.round((P.endsAt-Date.now())/1000));lab=Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}e.querySelector('span').textContent=lab;e.classList.toggle('on',P.timerLabel!=='Off')});
  const pl=$('.pl');if(pl)pl.classList.toggle('paused',!playing);
  updateMini();
 }
@@ -640,12 +655,12 @@ function updateMini(){
  if(!P||!S.onboarded||OV||!A.src){m.innerHTML='';$('#phone').classList.remove('hasmini');return}
  $('#phone').classList.add('hasmini');
  const playing=!A.paused;
- m.innerHTML=`<div class="mini" data-testid="mini"><button data-a="reopen" style="display:flex;gap:12px;align-items:center;flex:1;min-width:0;text-align:left"><img src="${P.s.chapters[P.ch].art}" alt=""><div>${P.s.title}<small>Chapter ${P.ch+1} \u00b7 ${P.speed}\u00d7</small></div></button><button class="pb" data-a="minipp" aria-label="${playing?'Pause':'Play'}">${playing?icf('pause'):icf('play')}</button></div>`;
+ m.innerHTML=`<div class="mini" data-testid="mini"><button data-a="reopen" style="display:flex;gap:12px;align-items:center;flex:1;min-width:0;text-align:left">${im(P.s.chapters[P.ch].art,"",false)}<div>${P.s.title}<small>Chapter ${P.ch+1} \u00b7 ${P.speed}\u00d7</small></div></button><button class="pb" data-a="minipp" aria-label="${playing?'Pause':'Play'}">${playing?icf('pause'):icf('play')}</button></div>`;
 }
 function renderPlayer(){
  const s=STORIES.find(x=>x.id===OV.id);
- if(!P||P.s.id!==s.id){const mode=MODES.find(m=>m.id===(S.mode||'com'));
-  P={s,ch:0,speed:mode.s,timerLabel:'Off',eoc:false};A.pause();pLoad(0,false)}
+ if(!P||P.s.id!==s.id){if(P)clearSleepTimer();const mode=MODES.find(m=>m.id===(S.mode||'com'));
+  P={s,ch:0,speed:mode.s,timerLabel:'Off',eoc:false,endsAt:null};A.pause();pLoad(0,false)}
  ov.innerHTML=`<div class="screen"><div class="pl paused">
   <div style="display:flex;align-items:center;gap:10px">${backBtn()}<span class="eyebrow" style="flex:1;text-align:center">Listen \u00b7 ${MODES.find(m=>m.id===(S.mode||'com')).n}</span><span style="width:48px"></span></div>
   <div class="cover"><img id="p-img" src="${s.chapters[P.ch].art}" alt=""></div>
@@ -746,27 +761,35 @@ function renderTrap(){
   return;
  }
  const fb=G.verdict==null?'':`<div class="whybox ${G.verdict===c.ans?'fb-ok':'fb-no'}" data-testid="trap-why"><b>${G.verdict===c.ans?'Yes.':'Not this time.'}</b> ${c.why}</div>`;
- ov.innerHTML=`<div class="screen"><div class="gwrap"><div style="display:flex;align-items:center;gap:10px">${backBtn()}<div style="flex:1"><span class="eyebrow">Spot the Trap \u00b7 ${G.i+1} of ${n}</span><div style="font-weight:800">Swipe Trap or Smart</div></div><b data-testid="trap-sofar">${G.score} right</b></div>
+ ov.innerHTML=`<div class="screen"><div class="gwrap"><div class="ghead">${backBtn()}<div class="gmeta"><span class="eyebrow">Spot the Trap</span><div style="font-weight:800">${G.i+1}&nbsp;of&nbsp;${n} \u00b7 Swipe Trap or Smart</div></div><b class="gcount" data-testid="trap-sofar">${G.score} right</b></div>
   <div class="trap-card" id="trapcard"><div class="scene ${G.verdict==null?'':(G.verdict===c.ans?'flash-smart':'flash-trap')}" data-testid="trap-scene"><span class="valbadge">${c.value}</span><p class="mute" style="font-size:13px;margin:0 0 6px">${c.title}</p><h2 style="font-size:22px;line-height:1.3;margin:0">${c.scene}</h2>${fb}</div>
   ${G.verdict==null?`<div class="trap-btns"><button class="btn trap" data-a="trap-ans" data-v="trap" data-testid="ans-trap">Trap</button><button class="btn smart" data-a="trap-ans" data-v="smart" data-testid="ans-smart">Smart</button></div>`:`<button class="btn" style="margin-top:14px" data-a="trap-next" data-testid="trap-next">${G.i===n-1?'See my score':'Next'}</button>`}
   <p class="mute" style="font-size:13px;text-align:center;margin-top:10px">Swipe left for Trap, right for Smart \u00b7 or use the buttons</p></div></div></div>`;
  if(G.verdict==null)setupTrapSwipe();
 }
+let trapSwipeOff=null;
 function setupTrapSwipe(){
+ if(trapSwipeOff){trapSwipeOff();trapSwipeOff=null}
  const el=$('#trapcard');if(!el)return;
  let sx=0,dx=0,down=false,sc=el.querySelector('.scene');
- el.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;down=true;sx=e.clientX;dx=0});
- const up=e=>{if(!down)return;down=false;if(Math.abs(dx)>60)trapAns(dx<0?'trap':'smart');else if(sc)sc.style.transform=''};
- window.addEventListener('pointermove',e=>{if(!down)return;dx=e.clientX-sx;if(sc)sc.style.transform=`translateX(${dx*0.4}px) rotate(${dx*0.04}deg)`},{once:false});
- el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);
+ const move=e=>{if(!down)return;dx=e.clientX-sx;if(sc)sc.style.transform=`translateX(${dx*0.4}px) rotate(${dx*0.04}deg)`};
+ const up=()=>{if(!down)return;down=false;if(Math.abs(dx)>60)trapAns(dx<0?'trap':'smart');else if(sc)sc.style.transform=''};
+ const downFn=e=>{if(e.target.closest('button'))return;down=true;sx=e.clientX;dx=0};
+ el.addEventListener('pointerdown',downFn);
+ window.addEventListener('pointermove',move);
+ window.addEventListener('pointerup',up);
+ window.addEventListener('pointercancel',up);
+ trapSwipeOff=()=>{el.removeEventListener('pointerdown',downFn);window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',up);down=false};
 }
 function trapAns(v){
- const G=OV.g;if(!G||G.verdict!=null)return;
- const c=TRAP_CARDS[G.i];G.verdict=v;G.locked=true;
+ const G=OV&&OV.g;if(!G||G.locked||G.verdict!=null)return;
+ const c=TRAP_CARDS[G.i];if(!c)return;
+ G.verdict=v;G.locked=true;
  if(v===c.ans){G.score++;beep('ok')}else beep('bad');
+ if(trapSwipeOff){trapSwipeOff();trapSwipeOff=null}
  renderTrap();
 }
-function trapNext(){const G=OV.g;G.i++;G.verdict=null;G.locked=false;renderTrap()}
+function trapNext(){const G=OV&&OV.g;if(!G||G.verdict==null)return;G.i++;G.verdict=null;G.locked=false;renderTrap()}
 
 function renderFocus(){
  const F=OV.f||(OV.f={t:30,left:30,score:0,wrong:0,focused:0,clean:0,running:false,over:false,spawned:0});
@@ -894,9 +917,10 @@ function nextDay(){
   if((S.freeze||0)>0){S.freeze--;const rec=S.daily[d]=S.daily[d]||{};rec.frozen=true;rec.goal=true;if(!S.traits.comeback)grantTrait('comeback');toast('Streak freeze used. Your streak is safe.');}
  }
  if(S.kite&&S.kite.p1&&!S.kite.p2)S.kite.p2ready=true;
- const showRecap=((S.offset+1)%7===0)&&S.offset>0;
- if((S.offset-(S.weekStart||0))>=7){S.week={xp:0,stories:0,listens:0,actions:0,plays:0,traits:[]};S.weekXp=0;S.weekStart=S.offset+1}
- S.offset++;S.demoHour=null;save();
+ const next=S.offset+1;
+ const showRecap=(next%7===0)&&S.offset>0;
+ if((next-(S.weekStart||0))>=7){S.week={xp:0,stories:0,listens:0,actions:0,plays:0,traits:[]};S.weekXp=0;S.weekStart=next}
+ S.offset=next;S.demoHour=null;save();
  if(showRecap){openOverlay({type:'recap'});toast('A new week. Here is your recap.')}
  else{render();toast('Simulated: next day')}
 }
@@ -988,5 +1012,6 @@ window.__ethos={get state(){return S},audio:A,get player(){return P},complete,do
  finishFocus(secs){if(!OV||OV.type!=='focus'||!OV.f)return false;stopFocus();OV.f.focused=secs;OV.f.running=false;OV.f.over=true;renderFocus();return true},
  finishListen(){if(P)pFinish()},
  dismiss(){pendingLevel=null;sheet.classList.remove('show');sheet.innerHTML=''},
- nudgeEoc(){return maybeEocPause()}};
+ nudgeEoc(){return maybeEocPause()},
+ fireTimer(){return fireSleepTimer()}};
 })();
