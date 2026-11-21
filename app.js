@@ -1147,7 +1147,7 @@ function viewParents(standalone){
   <p><b>Data stays on this phone.</b> This demo saves progress in the phone's own storage. It does not create an account, and it does not send your child's name, age or choices to a server.</p>
   <p><b>How 18+ is locked.</b> Anyone under 18 is in teen-safe mode. Love stories, public leagues and any purchase screens stay hidden. Under-18s are not shown stranger leaderboards.</p>
   <p><b>Contact.</b> <a href="mailto:${mail}" style="color:var(--amber)">${mail}</a></p>
-  <p class="mute" style="font-size:13px">This page is for parents and guardians. It is not legal advice.</p>
+  <p class="mute" style="font-size:13px">From about 13 May 2027, India's DPDP Rule 10 will ask for verifiable parental consent before a child's data leaves the device. This demo does not send under-18 data off the phone at all. Only on-device counts are kept. This page is for parents and guardians. It is not legal advice.</p>
   <a class="btn" style="margin-top:16px;text-decoration:none" data-testid="send-parent-wa" href="https://wa.me/?text=${encodeURIComponent(text)}" target="_blank" rel="noopener">${t('sendParent')} · WhatsApp</a>
   <a class="btn ghost sm" style="margin-top:8px;text-decoration:none" data-testid="send-parent-mail" href="mailto:?subject=${encodeURIComponent('EthosSAI — a note for parents')}&body=${encodeURIComponent(text)}">${t('sendParent')} · Email</a>
   ${standalone?`<button class="btn ghost sm" style="margin-top:16px" data-a="parents-home">Back to the demo</button>`:''}
