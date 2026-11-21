@@ -1,7 +1,7 @@
 (()=>{
 'use strict';
 const $=s=>document.querySelector(s);
-const KEY='ethossai_3layer_demo_v1';
+const KEY='ethossai_3layer_demo_v2';
 const I={
  home:'<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
  book:'<path d="M2 5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v15a2 2 0 0 0-2-2H2z"/><path d="M22 5a2 2 0 0 0-2-2h-6a2 2 0 0 0-2 2v15a2 2 0 0 1 2-2h8z"/>',
@@ -22,7 +22,12 @@ const I={
  pause:'<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>',
  skipb:'<path d="M19 20 9 12l10-8zM5 19V5"/>',
  skipf:'<path d="M5 4l10 8-10 8zM19 5v14"/>',
- gauge:'<path d="M12 14l4-4"/><path d="M3.3 17a10 10 0 1 1 17.4 0"/>'
+ gauge:'<path d="M12 14l4-4"/><path d="M3.3 17a10 10 0 1 1 17.4 0"/>',
+ gift:'<polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>',
+ snow:'<path d="M12 2v20M4.9 7l14.2 10M4.9 17 19.1 7M2 12h20"/>',
+ trophy:'<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 6h2a2 2 0 0 1 0 4h-2M7 6H5a2 2 0 0 0 0 4h2"/>',
+ download:'<path d="M12 3v12M7 11l5 5 5-5M4 21h16"/>',
+ game:'<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 12h4M8 10v4M15 11h.01M18 13h.01"/>'
 };
 const ic=(n,c='')=>`<svg class="i ${c}" viewBox="0 0 24 24" aria-hidden="true">${I[n]}</svg>`;
 const icf=n=>ic(n,'f');
@@ -30,13 +35,26 @@ const backBtn=(cls='')=>`<button class="backb ${cls}" data-a="closeov" data-test
 
 /* ---------- content ---------- */
 const TRAITS={
- kite:{name:'Own String',line:'You fly your own kite, not theirs.',tag:'READ · IDENTITY',img:'img/trait_raw1.webp'},
- well:{name:'Deep Digger',line:'You stay in one hole until water shows up.',tag:'LISTEN · FOCUS',img:'img/trait_raw2.webp'},
- listener:{name:'The Listener',line:'You ask before you guess.',tag:'WATCH · FOUNDERS',img:'img/ep/e1endB.webp'},
- pause:{name:'Pause Keeper',line:'You let wants cool off before they cost you.',tag:'WATCH · MONEY',img:'img/ep/e2endB.webp'},
- voice:{name:'Brave Voice',line:'You speak up for what you need.',tag:'WATCH · SPEAKING',img:'img/ep/e3endB.webp'},
- talker:{name:'Straight Talker',line:'You say it clearly and kindly.',tag:'WATCH · LOVE · 18+',img:'img/ep/e5endB.webp',adult:true},
- steady:{name:'Steady Hand',line:'You let the first try be a try.',tag:'WATCH · CALM',img:'img/ep/e4endB.webp'}
+ kite:{name:'Own String',line:'You fly your own kite, not theirs.',tag:'READ · IDENTITY',img:'img/trait_raw1.webp',rarity:'rare'},
+ well:{name:'Deep Digger',line:'You stay in one hole until water shows up.',tag:'LISTEN · FOCUS',img:'img/trait_raw2.webp',rarity:'rare'},
+ listener:{name:'The Listener',line:'You ask before you guess.',tag:'WATCH · FOUNDERS',img:'img/ep/e1endB.webp',rarity:'common'},
+ pause:{name:'Pause Keeper',line:'You let wants cool off before they cost you.',tag:'WATCH · MONEY',img:'img/ep/e2endB.webp',rarity:'common'},
+ voice:{name:'Brave Voice',line:'You speak up for what you need.',tag:'WATCH · SPEAKING',img:'img/ep/e3endB.webp',rarity:'common'},
+ talker:{name:'Straight Talker',line:'You say it clearly and kindly.',tag:'WATCH · LOVE · 18+',img:'img/ep/e5endB.webp',adult:true,rarity:'rare'},
+ steady:{name:'Steady Hand',line:'You let the first try be a try.',tag:'WATCH · CALM',img:'img/ep/e4endB.webp',rarity:'common'},
+ honest:{name:'Honest Rupee',line:'You do not pay to “get a refund.”',tag:'PLAY · HONESTY',img:'img/ep/e2a.webp',rarity:'rare'},
+ patient:{name:'The Pauser',line:'You let a want wait a day.',tag:'PLAY · PATIENCE',img:'img/hero_s2.webp',rarity:'common'},
+ respect:{name:'Kind No',line:'You can say no and still be kind.',tag:'PLAY · SELF-RESPECT',img:'img/ep/e3endB.webp',rarity:'rare'},
+ kind:{name:'Soft Voice',line:'A clear no can still be warm.',tag:'VALUES · KINDNESS',img:'img/ep/e4endB.webp',rarity:'common'},
+ focus:{name:'Quiet Desk',line:'You keep the pings off your notes.',tag:'PLAY · FOCUS',img:'img/ep/e4a.webp',rarity:'rare'},
+ saver:{name:'Jar Starter',line:'You put a little aside first.',tag:'MONEY · PATIENCE',img:'img/ep/e2endB.webp',rarity:'rare'},
+ shield:{name:'Scam Shield',line:'You can spot a money trap in time.',tag:'PLAY · LEGENDARY',img:'img/ep/e1endA.webp',rarity:'legendary'},
+ warm:{name:'Warm Hello',line:'You notice the people next to you.',tag:'VALUES · KINDNESS',img:'img/fan3.webp',rarity:'common'},
+ dawn:{name:'Early Light',line:'You start small, then show up again.',tag:'HABIT · PATIENCE',img:'img/fan1.webp',rarity:'common'},
+ root:{name:'Deep Roots',line:'You stay with one hard thing a little longer.',tag:'FOCUS · RARE',img:'img/hero_s2.webp',rarity:'rare'},
+ lantern:{name:'Light Keeper',line:'You keep a small promise to yourself.',tag:'HABIT · COMMON',img:'img/ep/e1a.webp',rarity:'common'},
+ compass:{name:'Own Path',line:'You choose your sky, not theirs.',tag:'IDENTITY · LEGENDARY',img:'img/trait_raw1.webp',rarity:'legendary'},
+ comeback:{name:'Comeback',line:'A missed day did not end your streak.',tag:'STREAK · LEGENDARY',img:'img/ep/e1endB.webp',rarity:'legendary'}
 };
 const EPS=[
 {id:'e1',title:'The Night Market',series:'Founders',thumb:'img/ep/e1a.webp',xp:40,trait:'listener',stats:['Hustle','Kindness'],
@@ -123,10 +141,10 @@ const SOON_LISTEN=['The Gulmohar and the Banyan','The Last Seat in the Metro','T
 const MODES=[{id:'gym',n:'Gym',s:1.25,d:'A bit faster'},{id:'run',n:'Jogging',s:1,d:'Normal speed'},{id:'com',n:'Commute',s:1,d:'Normal speed'}];
 const SKIN=['#fbe0cc','#f1c39d','#dca37a','#b87850','#8e5a38','#5c3a22'];
 const HOOD=['#22386a','#F2B544','#f3ead6','#2f8f8a','#e8798a','#5b3f87'];
-const LEVELS=[['Spark',0,100],['Ember',100,250],['Flame',250,500],['Beacon',500,900]];
+const LEVELS=[['Spark',0,80],['Flame',80,200],['Torch',200,400],['Blaze',400,99999]];
 
 /* ---------- state ---------- */
-const fresh=()=>({onboarded:false,hint:false,name:'',age:'',av:{g:'girl',skin:SKIN[2],hoodie:HOOD[1]},xp:0,offset:0,done:{},daily:{},actions:{},traits:{},ep:{}});
+const fresh=()=>({onboarded:false,hint:false,name:'',age:'',av:{g:'girl',skin:SKIN[2],hoodie:HOOD[1]},xp:0,offset:0,done:{},daily:{},actions:{},traits:{},ep:{},freeze:0,freezeEarned:false,weekXp:0,weekStart:0,week:{xp:0,stories:0,listens:0,actions:0,plays:0,traits:[]},kite:{},mystery:{},best:{trap:0,focus:0},demoHour:null,sound:false});
 let S;try{S=Object.assign(fresh(),JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){S=fresh()}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 const dstr=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
@@ -140,25 +158,136 @@ const visTraits=()=>Object.keys(TRAITS).filter(k=>!TRAITS[k].adult||adult());
 const reduced=matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
 const dayIdx=()=>((S.offset%2)+2)%2;
 const TD=()=>S.daily[today()]||{};
+function dayDone(k){const d=S.daily[k]||{};return !!(d.goal||d.frozen)}
 function streaks(){
- let cur=0,o=S.offset;if(!S.daily[dstr(dayAt(o))])o--;
- while(S.daily[dstr(dayAt(o))]){cur++;o--}
+ let cur=0,o=S.offset;if(!dayDone(dstr(dayAt(o))))o--;
+ while(dayDone(dstr(dayAt(o)))){cur++;o--}
  const ks=Object.keys(S.daily).sort();let best=0,run=0,prev=null;
- ks.forEach(k=>{const t=new Date(k+'T00:00').getTime();run=(prev&&Math.round((t-prev)/864e5)===1)?run+1:1;prev=t;best=Math.max(best,run)});
- return{cur,best};
+ ks.forEach(k=>{if(!dayDone(k)){run=0;prev=null;return}const t=new Date(k+'T00:00').getTime();run=(prev&&Math.round((t-prev)/864e5)===1)?run+1:1;prev=t;best=Math.max(best,run)});
+ return{cur,best:Math.max(best,cur)};
 }
 const level=()=>{const l=LEVELS.find(l=>S.xp<l[2])||LEVELS[LEVELS.length-1];return{n:l[0],lo:l[1],hi:l[2],p:Math.min(100,(S.xp-l[1])/(l[2]-l[1])*100)}};
+function goalOf(day){
+ const d=S.daily[day]||{};
+ const story=!!(d.read||d.watch);
+ const listen=!!d.listen;
+ const action=!!(d.action||d.play||Object.keys(S.actions).some(k=>S.actions[k]===day));
+ const n=[story,listen,action].filter(Boolean).length;
+ return{story,listen,action,n,done:story&&listen&&action};
+}
+function weekObj(){S.week=S.week||{xp:0,stories:0,listens:0,actions:0,plays:0,traits:[]};return S.week}
+function addXP(n){
+ if(!n)return false;
+ const before=level().n;
+ S.xp+=n;weekObj().xp=(S.week.xp||0)+n;S.weekXp=(S.weekXp||0)+n;
+ save();
+ const after=level().n;
+ if(after!==before) setTimeout(()=>showLevelUp(after),400);
+ return after!==before;
+}
+function grantTrait(k){
+ if(!k||S.traits[k]||(TRAITS[k]&&TRAITS[k].adult&&!adult()))return false;
+ S.traits[k]=today();
+ const w=weekObj();w.traits=w.traits||[];if(!w.traits.includes(k))w.traits.push(k);
+ save();return true;
+}
 let toastT;
-function toast(m){const b=$('#toastbox');b.innerHTML=`<div class="toast" role="status">${m}</div>`;clearTimeout(toastT);toastT=setTimeout(()=>b.innerHTML='',2400)}
+function toast(m){const b=$('#toastbox');if(!b)return;b.innerHTML=`<div class="toast" role="status">${m}</div>`;clearTimeout(toastT);toastT=setTimeout(()=>b.innerHTML='',2400)}
 function complete(layer,id,xp){
  const k=layer+':'+id;const d=S.daily[today()]=S.daily[today()]||{};d[layer]=id;
  const first=!S.done[k];let newTrait=null;
- if(first){S.done[k]=today();S.xp+=xp;
-  const t=layer==='watch'?EPS.find(e=>e.id===id).trait:STORIES.find(s=>s.id===id).trait;
-  if(!S.traits[t]){S.traits[t]=today();newTrait=t}}
+ if(first){S.done[k]=today();addXP(xp);
+  const w=weekObj();
+  if(layer==='watch'||(layer==='read'&&id!=='s1-p1'))w.stories=(w.stories||0)+1;
+  if(layer==='listen')w.listens=(w.listens||0)+1;
+  if(layer==='play')w.plays=(w.plays||0)+1;
+  let tid=null;
+  if(layer==='watch')tid=(EPS.find(e=>e.id===id)||{}).trait;
+  else if(layer==='listen'||(layer==='read'&&id!=='s1-p1')){const s=STORIES.find(x=>x.id===id||(id&&id.startsWith(x.id)));tid=s&&s.trait}
+  if(tid&&grantTrait(tid))newTrait=tid}
+ maybeGoal();
  save();return{first,newTrait,xp};
 }
-function doAction(key,xp=10){if(S.actions[key])return false;S.actions[key]=today();S.xp+=xp;save();toast('Tiny action done \u00b7 +'+xp+' XP');return true}
+function doAction(key,xp=10){if(S.actions[key])return false;S.actions[key]=today();const d=S.daily[today()]=S.daily[today()]||{};d.action=key;weekObj().actions=(S.week.actions||0)+1;addXP(xp);maybeGoal();save();toast('Tiny action done \u00b7 +'+xp+' XP');return true}
+function maybeGoal(){
+ const g=goalOf(today());
+ if(g.done){const d=S.daily[today()]=S.daily[today()]||{};
+  if(!d.goal){d.goal=true;
+   const st=streaks();
+   if(st.cur>=3&&!S.freezeEarned){S.freeze=(S.freeze||0)+1;S.freezeEarned=true;setTimeout(()=>toast('Streak freeze earned. Miss a day, keep the streak.'),800)}
+   if(!d.celebrated){d.celebrated=true;save();confetti();toast('You hit today\u2019s goal.')}
+  }save()}
+}
+const SAMPLE_PEOPLE=[
+ {name:'Kabir M.',xp:160},
+ {name:'Meera S.',xp:120},
+ {name:'Dev P.',xp:85},
+ {name:'Zoya K.',xp:55}
+];
+const SAMPLE_FRIEND={name:'Anaya',streak:5};
+function leagueTier(xp){return xp>=200?'gold':xp>=100?'silver':'bronze'}
+function leagueBoard(){
+ const me={name:(S.name||'You')+' (you)',xp:S.weekXp||0,me:true};
+ return SAMPLE_PEOPLE.concat([me]).sort((a,b)=>b.xp-a.xp||(a.me?-1:1));
+}
+const MYSTERY_ROT=[
+ {kind:'quote',xp:8,text:'A small honest no today is worth more than a loud yes you cannot keep.',trait:null},
+ {kind:'xp',xp:15,text:'Bonus XP for showing up today. Put it toward the next hard thing, not a treat you do not need.'},
+ {kind:'trait',xp:10,text:'A rare trait card slipped out of the box.',trait:'compass'},
+ {kind:'quote',xp:8,text:'Comparing two prices takes five minutes. A rushed buy can cost a week of lunch money.',trait:null},
+ {kind:'trait',xp:10,text:'Patience showed up in the box.',trait:'patient'},
+ {kind:'xp',xp:12,text:'A little bonus XP. Like a SIP, it only matters if you come back tomorrow.'},
+ {kind:'trait',xp:10,text:'A kind-no card for the next time a group spends more than you can.',trait:'kind'}
+];
+function mysteryFor(day){
+ S.mystery=S.mystery||{};
+ if(S.mystery[day])return S.mystery[day];
+ const i=Math.abs(S.offset||0)%MYSTERY_ROT.length;
+ const src=MYSTERY_ROT[i];
+ let trait=src.trait;
+ if(trait&&(S.traits[trait]||(TRAITS[trait]&&TRAITS[trait].adult&&!adult())))trait=(['dawn','warm','lantern','root'].find(k=>!S.traits[k]))||null;
+ const m={kind:trait?'trait':src.kind,xp:src.xp,text:src.text,trait,opened:false};
+ S.mystery[day]=m;save();return m;
+}
+
+function beep(kind){
+ if(!S.sound||reduced)return;
+ try{
+  const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
+  const ctx=beep._c||(beep._c=new C());
+  const o=ctx.createOscillator(),g=ctx.createGain();
+  o.type='sine';o.frequency.value=kind==='bad'?180:kind==='win'?660:420;
+  g.gain.value=0.06;o.connect(g);g.connect(ctx.destination);o.start();
+  g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.12);o.stop(ctx.currentTime+0.13);
+ }catch(e){}
+ if(navigator.vibrate)try{navigator.vibrate(kind==='bad'?[40,30,40]:20)}catch(e){}
+}
+function confetti(){
+ const host=$('#phone');if(!host)return;
+ const c=document.createElement('canvas');c.className='fx-canvas';c.setAttribute('data-testid','confetti');
+ host.appendChild(c);const r=host.getBoundingClientRect();c.width=r.width;c.height=r.height;
+ const x=c.getContext('2d'),bits=[];
+ const cols=['#F2B544','#FFE7AE','#FF8A7A','#2f8f8a','#f3ead6'];
+ for(let i=0;i<80;i++)bits.push({x:c.width/2+(Math.random()-0.5)*80,y:c.height*0.28,vx:(Math.random()-0.5)*7,vy:-Math.random()*7-3,s:4+Math.random()*6,c:cols[i%cols.length],a:1,rot:Math.random()*6});
+ let n=0;const tick=()=>{x.clearRect(0,0,c.width,c.height);bits.forEach(b=>{b.vy+=0.18;b.x+=b.vx;b.y+=b.vy;b.rot+=0.1;b.a-=0.012;x.save();x.translate(b.x,b.y);x.rotate(b.rot);x.globalAlpha=Math.max(0,b.a);x.fillStyle=b.c;x.fillRect(-b.s/2,-b.s/2,b.s,b.s*0.6);x.restore()});
+  if(++n<90&&bits.some(b=>b.a>0))requestAnimationFrame(tick);else c.remove()};
+ if(reduced)c.remove();else requestAnimationFrame(tick);
+}
+function showLevelUp(name){
+ if(sheet.classList.contains('show')){pendingLevel=name;return}
+ openSheet(`<div class="lvlup" data-testid="level-up"><div class="fl">${icf('flame')}</div><p class="eyebrow">Level up</p><h3 style="font-size:28px;margin:6px 0 8px">You reached ${name}!</h3><p class="mute" style="font-size:15px;line-height:1.45">Keep the habit small. The level is just a name for showing up.</p><button class="btn" style="margin-top:16px" data-a="closesheet" data-testid="level-up-ok">Nice</button></div>`);
+}
+
+const TRAP_CARDS=[
+ {id:'upi',ans:'trap',value:'Honesty',title:'A \u201ccustomer care\u201d call',scene:'Your UPI payment looks like it failed. The person on the phone says: \u201cScan this QR code to get a refund.\u201d',why:'Real banks never ask you to scan a QR code to get a refund. If someone rushes you, it is not help.'},
+ {id:'prize',ans:'trap',value:'Patience',title:'You won a prize?',scene:'A text says: \u201cYou have won \u20b950,000! Pay \u20b999 now to claim your prize.\u201d',why:'If you must pay to collect a prize, it is not a prize. A real win does not start with a fee.'},
+ {id:'emi',ans:'trap',value:'Patience',title:'No-cost EMI',scene:'A shop offers a new phone at \u20b90 down and \u201cno-cost EMI.\u201d Your old phone still works, and you have exams this month.',why:'EMI is still a loan. \u201cNo-cost\u201d can hide fees. A phone you do not need can quietly eat next month\u2019s money.'},
+ {id:'bets',ans:'trap',value:'Self-respect',title:'A sure-shot tip',scene:'A WhatsApp group sells \u201csure-shot\u201d cricket bets and crypto tips. Two friends already put in \u20b9500 and tell you to hurry.',why:'Betting groups and crypto \u201ctip\u201d chats are built to take your money, not to share a secret. Walking away is self-respect.'},
+ {id:'intern',ans:'trap',value:'Honesty',title:'Pay to intern',scene:'A \u201cremote internship\u201d asks for a \u20b92,000 registration fee before you start, and promises a certificate in two weeks.',why:'A real internship pays you, or at least costs you nothing to join. Honesty does not start with a fee to \u201cget in.\u201d'},
+ {id:'party',ans:'trap',value:'Self-respect',title:'Just this once',scene:'At a friend\u2019s birthday, the table orders kebabs and mocktails you cannot afford. Someone says, \u201cCome on, just this once.\u201d',why:'A kind, clear \u201cI\u2019ll sit this one out\u201d is self-respect, not rudeness. Friends who care will still want you there.'},
+ {id:'jar',ans:'smart',value:'Patience',title:'First stipend',scene:'Your first stipend just landed. Before you buy anything, you put \u20b9500 into a jar and leave it for a bad day.',why:'An emergency fund is money for a hard day, not for a want. That is how you stay kind to future you.'},
+ {id:'sip',ans:'smart',value:'Patience',title:'A small SIP',scene:'A cousin says you can start a SIP (a Systematic Investment Plan) with \u20b9100 a month in a simple index fund, using money you can leave untouched.',why:'A SIP is just a small, regular investment. It does not promise profit. Starting tiny, and staying, beats one \u201chot tip.\u201d'}
+];
 
 /* ---------- avatar ---------- */
 function avatar(a,cls='avatar'){
@@ -183,13 +312,16 @@ const app=$('#app'),ov=$('#overlay'),sheet=$('#sheet');
 function go(t){tab=t;closeOverlay(true);render()}
 function openOverlay(o){OV=o;renderOverlay();updateMini()}
 function closeOverlay(silent){
+ stopFocus();
  const had=ov.classList.contains('show');OV=null;
  if(had&&!reduced){ov.classList.add('out');setTimeout(()=>{if(!OV){ov.classList.remove('show','out');ov.innerHTML=''}},190)}
  else{ov.classList.remove('show','out');ov.innerHTML=''}
  if(!silent){render()}updateMini();
 }
+let pendingLevel=null;
 function openSheet(html){sheet.innerHTML=`<div class="pane">${html}</div>`;sheet.classList.add('show')}
-function closeSheet(){sheet.classList.remove('show');sheet.innerHTML=''}
+function closeSheet(){sheet.classList.remove('show');sheet.innerHTML='';if(pendingLevel){const n=pendingLevel;pendingLevel=null;setTimeout(()=>showLevelUp(n),250)}}
+
 sheet.addEventListener('click',e=>{if(e.target===sheet)closeSheet()});
 
 function render(){
@@ -200,7 +332,7 @@ function render(){
   .map(([k,i,n])=>`<button data-a="go" data-v="${k}" class="${tab===k?'on':''}" aria-label="${n}" ${tab===k?'aria-current="page"':''}>${ic(i)}<span>${n}</span></button>`).join('');
  app.innerHTML=`<div class="screen" data-tab="${tab}">
   <div class="top"><span class="brand">Ethos<b>SAI</b></span><span class="demo">DEMO</span><span class="sp"></span>
-  <span class="chip" title="Streak">${ic('flame')}${st.cur}</span></div>
+  <button class="chip flamechip" title="Streak" data-a="scrollstreak" data-testid="streak-chip">${icf('flame')}<span>${st.cur}</span></button></div>
   <div class="scroll ${tab!==lastTab&&!reduced?'enter':''}" id="scroll">${body}</div>
   <nav class="nav" aria-label="Main">${nav}</nav></div>`;
  lastTab=tab;updateMini();
@@ -250,30 +382,61 @@ function lookPanel(edit){
 /* ---------- Today ---------- */
 function viewToday(){
  const i=dayIdx(),rd=STORIES[i],ls=STORIES[1-i],ep=visEps()[((S.offset%visEps().length)+visEps().length)%visEps().length],d=TD();
- const n=['read','listen','watch'].filter(k=>d[k]).length,all=n===3;
+ const g=goalOf(today()),st=streaks();
+ const all=g.done;
  const dateLbl=dayAt(S.offset).toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short'});
- const task=(layer,ic_,kind,title,sub,img)=>`<button class="card task ${d[layer]?'done':''}" data-a="open" data-layer="${layer}" data-id="${layer==='watch'?ep.id:layer==='read'?rd.id:ls.id}">
+ const kite=S.kite||{};
+ let swipeTitle=rd.title,swipeSub='10 cards to swipe',swipeId=rd.id,swipeKind='Swipe \u00b7 3 min';
+ if(rd.id==='s1'){
+  if(!kite.p1){swipeTitle='The Kite That Copied';swipeKind='Swipe \u00b7 Part 1';swipeSub='6 cards, then a cliffhanger'}
+  else if(kite.p2ready&&!kite.p2){swipeTitle='The Kite That Copied';swipeKind='Swipe \u00b7 Part 2';swipeSub='The rest of the story is ready'}
+  else if(kite.p1&&!kite.p2ready){swipeTitle='The Kite That Copied';swipeKind='Swipe \u00b7 Part 1 done';swipeSub='Part 2 unlocks tomorrow'}
+  else {swipeSub='10 cards to swipe'}
+ }
+ const hour=S.demoHour!=null?S.demoHour:new Date().getHours();
+ const night=hour>=21&&st.cur>0&&!g.done;
+ const task=(layer,ic_,kind,title,sub,img,id)=>`<button class="card task ${d[layer]?'done':''}" data-a="open" data-layer="${layer}" data-id="${id}">
   <div class="th"><img src="${img}" alt=""></div><div class="tb"><span class="kind">${ic(ic_)}${kind}</span><h3>${title}</h3><small>${sub}</small></div>${d[layer]?`<span class="tick">${ic('check')}</span>`:''}</button>`;
  const act=(layer,key,txt)=>{const unlocked=!!d[layer],on=!!S.actions[key];return`<button class="act ${on?'on':''} ${unlocked?'':'lock'}" data-a="act" data-key="${key}" ${unlocked?'':'disabled'}>
   <span class="cb">${ic('check')}</span><div><small>${layer==='read'?'After you swipe':layer==='listen'?'After you listen':'After you watch'}</small><p>${unlocked?txt:'Finish the '+({read:'story',listen:'audio story',watch:'episode'})[layer]+' to unlock this.'}</p></div></button>`};
+ const myst=mysteryFor(today());
+ const circ=2*Math.PI*30,dash=circ*(1-g.n/3);
+ const p2card=(kite.p2ready&&!kite.p2&&rd.id!=='s1')?`<button class="card task" data-a="open" data-layer="read" data-id="s1" data-testid="part2-ready"><div class="th"><img src="img/cards/s1_07.webp" alt=""></div><div class="tb"><span class="kind">${ic('book')}Part 2 is ready</span><h3>The Kite That Copied</h3><small>Finish the story you left last night</small></div></button>`:'';
  return`<p class="mute" style="font-size:13px">${dateLbl}</p>
  <h1 class="h-title" style="margin-top:2px">Hey ${S.name||'there'}, here\u2019s today.</h1>
  ${teen()?`<p class="note good" style="margin:10px 0 0" data-testid="teen-banner">${ic('lock')}<span>Teen-safe mode is on. Stories for 18 and up are hidden.</span></p>`:''}
- <div class="ringrow"><div class="prog"><i style="width:${n/3*100}%"></i></div><b style="color:var(--amber)">${n} of 3 done</b></div>
- ${task('read','book','Swipe \u00b7 3 min',rd.title,'10 cards to swipe',rd.hero)}
- ${task('listen','head','Listen \u00b7 2 min',ls.title,'Audio story with sleep timer',ls.hero)}
- ${task('watch','film','Watch \u00b7 1 min',ep.title,ep.series+' \u00b7 you choose, no wrong answer',ep.thumb)}
+ <div class="card streakhero" id="streakhero" data-testid="streak-hero"><div class="fl" aria-hidden="true">${icf('flame')}</div><div><b data-testid="streak-count">${st.cur}-day streak</b><p>${st.cur? 'Show up again tomorrow to keep it.':'Finish today\u2019s goal to start a streak.'}</p>
+  ${S.freeze?`<span class="freeze-pill" data-testid="freeze-pill">${ic('snow')} ${S.freeze} streak freeze ready</span>`:(st.cur>=3?`<span class="freeze-pill">${ic('snow')} Freeze earned at day 3</span>`:`<span class="mute" style="display:block;margin-top:6px;font-size:13px">Earn a streak freeze at day 3.</span>`)}</div></div>
+ ${night?`<div class="banner-night" data-testid="ninepm-banner">${ic('moon')}<div>Your ${st.cur}-day streak ends tonight. Finish today\u2019s goal to keep it. <span class="demo">DEMO</span></div></div>`:''}
+ <div class="card goalbox" data-testid="goal-ring"><div class="gt"><div class="ring" aria-hidden="true"><svg viewBox="0 0 72 72"><circle cx="36" cy="36" r="30" fill="none" stroke="#0b1530" stroke-width="8"/><circle cx="36" cy="36" r="30" fill="none" stroke="#F2B544" stroke-width="8" stroke-linecap="round" stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${dash.toFixed(1)}"/></svg></div>
+  <div class="glist"><div class="gitem ${g.story?'on':''}"><i>${ic('check')}</i>1 story</div><div class="gitem ${g.listen?'on':''}"><i>${ic('check')}</i>1 listen</div><div class="gitem ${g.action?'on':''}"><i>${ic('check')}</i>1 action</div></div></div>
+  <p class="mute" style="font-size:13px;margin-top:10px">${g.n} of 3 done. A game or a tiny action both count as the action.</p></div>
+ <button class="card myst ${myst.opened?'open':''}" data-a="mystery" data-testid="mystery">${ic(myst.opened?'spark':'gift')?`<span class="box">${ic(myst.opened?'spark':'gift')}</span>`:''}<div><h3>${myst.opened?'Today\u2019s mystery is open':'Today\u2019s mystery card'}</h3><p class="mute" style="font-size:14px;margin:0">${myst.opened?'Tap to see it again.':'Tap to open. One surprise a day: a quote, bonus XP, or a rare card.'}</p></div></button>
+ ${p2card}
+ ${task('read','book',swipeKind,swipeTitle,swipeSub,rd.hero,swipeId)}
+ ${task('listen','head','Listen \u00b7 2 min',ls.title,'Audio story with sleep timer',ls.hero,ls.id)}
+ ${task('watch','film','Watch \u00b7 1 min',ep.title,ep.series+' \u00b7 you choose, no wrong answer',ep.thumb,ep.id)}
+ <p class="sec-t">Play \u00b7 about one minute</p>
+ <div class="playgrid">
+  <button class="card" data-a="trap" data-testid="play-trap">${ic('game')}<h3>Spot the Trap</h3><p>Real money traps vs smart moves. Swipe Trap or Smart.</p><span class="best">Best ${S.best&&S.best.trap||0}/8</span></button>
+  <button class="card" data-a="focus" data-testid="play-focus">${ic('spark')}<h3>Focus Tap</h3><p>Study for 30 seconds. Ignore the pings.</p><span class="best">Best ${S.best&&S.best.focus||0}s focused</span></button>
+ </div>
+ <button class="card friendrow" data-a="league" data-testid="friend-streak"><span class="avmini">${avatar({g:'girl',skin:SKIN[2],hoodie:HOOD[3]},'avatar avmini')}</span><div style="flex:1;min-width:0"><span class="sampletag">Sample friend</span><h3 style="margin:4px 0 0;font-size:16px">${SAMPLE_FRIEND.name} is on a ${SAMPLE_FRIEND.streak}-day streak</h3><p class="mute" style="font-size:13px;margin:2px 0 0">Not a real person. Demo only.</p></div></button>
  <p class="sec-t">Your small actions for today</p>
  ${act('read','act:read:'+rd.id,rd.action)}${act('listen','act:listen:'+ls.id,ls.action)}${act('watch','act:watch:'+ep.id,ep.action)}
  <div class="end ${all?'done':''}" data-testid="feed-end">${ic('moon')}
   <h3>${all?'You\u2019re done for today.':'This feed has an end.'}</h3>
-  <p class="mute" style="font-size:14px;line-height:1.5">${all?'Nice work. Put your phone down and do your small action. New picks come tomorrow.':'Do these three, then you\u2019re free. Nothing below this line will keep you scrolling.'}</p></div>`;
+  <p class="mute" style="font-size:14px;line-height:1.5">${all?'Nice work. Put your phone down and do your small action. New picks come tomorrow.':'Hit the goal, then you\u2019re free. Nothing below this line will keep you scrolling.'}</p></div>
+ <div class="demo-tools"><b style="color:var(--cream)">Demo tools</b>
+  <button class="btn ghost sm" data-a="nextday" data-testid="nextday">Simulate next day</button>
+  <button class="btn ghost sm" data-a="ninepm" data-testid="ninepm">${hour>=21?'Back to day time':'Pretend it\u2019s 9 PM'}</button>
+ </div>`;
 }
 
 /* ---------- Read ---------- */
 function viewRead(){
  return`<h1 class="h-title" style="margin-top:6px">Swipe a story</h1><p class="mute" style="margin:6px 0 16px;font-size:16px;line-height:1.5">Short stories on cards. Each one ends with one small thing to do.</p>
- ${STORIES.map(s=>`<button class="card lib" data-a="open" data-layer="read" data-id="${s.id}"><img src="${s.hero}" alt=""><div><span class="eyebrow">${s.tag}</span><h3>${s.title}</h3><span class="meta">10 cards \u00b7 about ${s.mins} min ${S.done['read:'+s.id]?'\u00b7 <b style="color:var(--amber)">Done</b>':''}</span></div></button>`).join('')}
+ ${STORIES.map(s=>{const ks=S.kite||{};let meta=`10 cards \u00b7 about ${s.mins} min`;if(s.id==='s1'){if(ks.p2)meta='Part 1 + Part 2 \u00b7 done';else if(ks.p2ready)meta='Part 2 is ready';else if(ks.p1)meta='Part 1 done \u00b7 Part 2 unlocks tomorrow';else meta='Part 1 \u00b7 6 cards + a cliffhanger'}else if(S.done['read:'+s.id])meta+=' \u00b7 <b style="color:var(--amber)">Done</b>';return `<button class="card lib" data-a="open" data-layer="read" data-id="${s.id}"><img src="${s.hero}" alt=""><div><span class="eyebrow">${s.tag}</span><h3>${s.title}</h3><span class="meta">${meta}</span></div></button>`}).join('')}
  <p class="sec-t">Coming soon</p>${SOON_READ.map(t=>`<div class="soon">${ic('lock')}${t}</div>`).join('')}`;
 }
 /* ---------- Listen ---------- */
@@ -293,23 +456,36 @@ function viewWatch(){
 /* ---------- You ---------- */
 function viewYou(){
  const l=level(),st=streaks(),acts=Object.keys(S.actions).length;
- const days=[...Array(7)].map((_,k)=>{const o=S.offset-6+k,dd=dayAt(o);return`<div class="${k===6?'today':''}"><i class="${S.daily[dstr(dd)]?'on':''}">${ic('check')}</i>${'SMTWTFS'[dd.getDay()]}</div>`}).join('');
+ const days=[...Array(7)].map((_,k)=>{const o=S.offset-6+k,dd=dayAt(o);return`<div class="${k===6?'today':''}"><i class="${dayDone(dstr(dd))?'on':''}">${ic('check')}</i>${'SMTWTFS'[dd.getDay()]}</div>`}).join('');
  const tr=visTraits().map(k=>traitCard(k,!!S.traits[k])).join('');
- const unlocked=visTraits().filter(k=>S.traits[k]).length;
+ const unlocked=visTraits().filter(k=>S.traits[k]).length,total=visTraits().length;
+ const tier=leagueTier(S.weekXp||0);
  return`<h1 class="h-title" style="margin:6px 0 14px">Me</h1>
  <div class="card"><div class="pcard">${avatar(S.av)}<div style="min-width:0"><h2 style="font-size:24px;font-weight:800">${S.name||'You'}</h2><p class="mute" style="font-size:14px;margin:2px 0 8px">Age ${S.age} \u00b7 ${l.n}</p><button class="link" data-a="editlook">Edit look</button></div></div>
-  <p style="margin:16px 0 8px;font-weight:700;font-size:15px">${l.n} \u00b7 <span id="xpv">${S.xp}</span> / ${l.hi} XP</p><div class="prog"><i style="width:${l.p}%"></i></div></div>
- <div class="card" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:17px">Streak</b><span class="chip" data-testid="streak">${ic('flame')}${st.cur}-day streak</span></div>
+  <p style="margin:16px 0 8px;font-weight:700;font-size:15px">${l.n} \u00b7 <span id="xpv">${S.xp}</span> / ${l.hi===99999?'max':l.hi} XP</p><div class="prog"><i style="width:${l.p}%"></i></div>
+  <p class="mute" style="font-size:13px;margin-top:8px">Levels: Spark, then Flame, then Torch, then Blaze.</p></div>
+ <div class="card" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:17px">Streak</b><span class="chip" data-testid="streak">${icf('flame')}${st.cur}-day streak</span></div>
   <div class="week">${days}</div>
-  <div class="stat"><div><b>${st.cur}</b><span>Current</span></div><div><b>${st.best}</b><span>Best</span></div><div><b>${acts}</b><span>Actions done</span></div></div></div>
- <p class="sec-t">Trait cards \u00b7 ${unlocked} of ${visTraits().length}</p>
- <div class="tgrid" data-testid="traits">${tr}</div>
- <p class="mute" style="font-size:13px;margin-top:10px;line-height:1.45">Finish a story, an audio story or an episode to unlock its card.</p>
+  <div class="stat"><div><b data-testid="streak-cur">${st.cur}</b><span>Current</span></div><div><b>${st.best}</b><span>Best</span></div><div><b data-testid="freeze-count">${S.freeze||0}</b><span>Freezes</span></div></div>
+  <button class="btn ghost sm" style="margin-top:12px" data-a="sharecard" data-testid="share-streak">${ic('share')}Share my streak</button></div>
+ <button class="card" style="margin-top:14px;width:100%;text-align:left;padding:16px" data-a="league" data-testid="league">
+  <div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:17px">Weekly league</b><span class="tier ${tier}">${tier}</span></div>
+  <p class="mute" style="font-size:14px;margin:6px 0 0">${S.weekXp||0} XP this week \u00b7 <span class="sampletag">Sample players</span></p>
+ </button>
+ <button class="card" style="margin-top:14px;width:100%;text-align:left;padding:16px" data-a="recap" data-testid="recap-open">
+  <span class="eyebrow">This week</span><h3 style="margin:4px 0 0;font-size:18px">You grew</h3>
+  <p class="mute" style="font-size:14px;margin:4px 0 0">A short recap of what you actually did.</p>
+ </button>
+ <p class="sec-t">Trait cards \u00b7 <span data-testid="collection">${unlocked}/${total} collected</span></p>
+ <div class="tgrid col20" data-testid="traits">${tr}</div>
+ <p class="mute" style="font-size:13px;margin-top:10px;line-height:1.45">Common, rare and legendary cards. Finish a story, a game or a mystery box to collect more.</p>
  ${teen()?`<p class="note good" style="margin-top:12px" data-testid="teen-me">${ic('lock')}<span><b>Teen-safe mode is on.</b> You are under 18, so stories for 18 and up (like Love) are hidden.</span></p>`:''}
  <div class="demo-tools"><b style="color:var(--cream)">Demo tools</b><br>See a second day of streaks and new picks, or start over.
-  <button class="btn ghost sm" data-a="nextday">Simulate next day</button><button class="btn ghost sm" data-a="reset" style="border-color:rgba(255,255,255,.25);color:var(--mute)">Reset demo</button></div>`;
+  <button class="btn ghost sm" data-a="nextday" data-testid="nextday-me">Simulate next day</button>
+  <button class="btn ghost sm" data-a="togglesound">${S.sound?'Sounds on':'Sounds off'}</button>
+  <button class="btn ghost sm" data-a="reset" style="border-color:rgba(255,255,255,.25);color:var(--mute)">Reset demo</button></div>`;
 }
-function traitCard(k,on,big){const t=TRAITS[k];return`<div class="trait ${on?'':'lock'} ${big?'big':''}" data-trait="${k}"><img src="${t.img}" alt=""><span class="tag">${on?t.tag:'LOCKED'}</span>${on?'':`<span class="lk">${ic('lock')}</span>`}<div class="tt"><b>${on?t.name:'???'}</b><span>${on?t.line:'Keep going to unlock.'}</span></div></div>`}
+function traitCard(k,on,big){const t=TRAITS[k];const rar=t.rarity||'common';return`<div class="trait ${on?'':'lock'} ${big?'big':''}" data-trait="${k}"><img src="${t.img}" alt=""><span class="tag">${on?t.tag:'LOCKED'}</span>${on?`<span class="rar rarity ${rar}">${rar}</span>`:`<span class="lk">${ic('lock')}</span>`}<div class="tt"><b>${on?t.name:'???'}</b><span>${on?t.line:'Keep going to unlock.'}</span></div></div>`}
 
 /* ---------- overlays ---------- */
 function renderOverlay(){
@@ -318,39 +494,64 @@ function renderOverlay(){
  if(OV.type==='player')return renderPlayer();
  if(OV.type==='ep')return renderEp();
  if(OV.type==='look'){ov.innerHTML=`<div class="ob" style="height:100%"><div class="steps">${backBtn()}</div>${lookPanel(true)}</div>`}
+ if(OV.type==='trap')return renderTrap();
+ if(OV.type==='focus')return renderFocus();
+ if(OV.type==='league')return renderLeague();
+ if(OV.type==='recap')return renderRecap();
+ if(OV.type==='share')return renderShare();
 }
 /* reader */
 let R;
+const XP={read:20,listen:20,p1:15,p2:20};
+function kiteMode(s){
+ if(s.id!=='s1')return 'full';
+ const k=S.kite||{};
+ if(k.p2)return 'full';
+ if(k.p2ready)return 'p2';
+ return 'p1';
+}
 function renderReader(){
- const s=STORIES.find(x=>x.id===OV.id);R={s,i:OV.i||0,n:s.chapters.length+1};
- const slides=s.chapters.map(c=>`<div class="slide"><img src="${c.img}" alt="Card ${c.n}: ${c.text.replace(/"/g,'&quot;')}"></div>`).join('');
+ const s=STORIES.find(x=>x.id===OV.id);const mode=kiteMode(s);
+ let chapters,finale,recap=false,title=s.title,tag=s.tag;
+ if(mode==='p1'){chapters=s.chapters.slice(0,6);finale='cliff';title='The Kite That Copied \u00b7 Part 1'}
+ else if(mode==='p2'){chapters=s.chapters.slice(6);finale='take';recap=true;title='The Kite That Copied \u00b7 Part 2'}
+ else {chapters=s.chapters;finale='take'}
+ const extra=recap?1:0;
+ R={s,i:OV.i||0,n:chapters.length+extra+1,mode,finale,chapters};
+ const recapSlide=recap?`<div class="slide"><div class="final"><div class="card lesson"><span class="eyebrow">Last time</span><h2>The string snapped.</h2><p style="font-size:16px;line-height:1.45;margin:8px 0 0">Kabir\u2019s patchwork kite fell into a lane below. The sky went quiet. Swipe to see what Baba Iqbal does next.</p></div></div></div>`:'';
+ const slides=chapters.map(c=>`<div class="slide"><img src="${c.img}" alt="Card ${c.n}: ${c.text.replace(/"/g,'&quot;')}"></div>`).join('');
  const doneA=!!S.actions['act:read:'+s.id];
+ const cliff=`<div class="slide"><div class="cliff" data-testid="cliffhanger"><img src="img/cards/s1_06.webp" alt="The kite falls"><div class="cc"><span class="eyebrow">Cliffhanger</span><h2>The string snaps. The kite is gone.</h2><p style="font-size:16px;line-height:1.45;margin:0">What does Kabir do now? You will find out tomorrow.</p><div class="countdown" data-testid="p2-countdown">Part 2 unlocks tomorrow</div><p class="mute" style="font-size:13px;text-align:center;margin-top:10px">In this demo, use Simulate next day to unlock it. +${XP.p1} XP for Part 1.</p></div></div></div>`;
  const fin=`<div class="slide"><div class="final" data-testid="final">
   <div class="card lesson"><span class="eyebrow">The takeaway</span><h2>${s.moral}</h2>
   <span class="eyebrow" style="color:var(--coral)">Try this today</span><p style="font-size:16px;line-height:1.45;margin:6px 0 14px">${s.action}</p>
   <button class="bigcheck ${doneA?'ok':''}" data-a="readdone" data-testid="done">${ic('check')}<span>${doneA?'Done \u2713':'Done'}</span></button></div>
   <div style="display:flex;gap:10px;margin-top:12px"><button class="btn ghost sm" data-a="share" style="flex:1">${ic('share')}Share</button><button class="btn sm" data-a="closeov" style="flex:1">Back to Today</button></div>
-  <p class="mute" style="font-size:13px;text-align:center;margin-top:10px"><span class="xp" style="font-size:13px;padding:3px 10px">+${XP.read} XP</span> for finishing &middot; Pictures are made by AI</p></div></div>`;
- ov.innerHTML=`<div class="screen"><div class="rd-top">${backBtn()}<div style="flex:1;min-width:0"><span class="eyebrow">Swipe &middot; ${s.tag}</span><div style="font-weight:800;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.title}</div></div><b class="mute" id="cnt" style="font-size:14px"></b></div>
-  <div class="car" id="car"><div class="track" id="track">${slides}${fin}</div>${S.hint?'':`<div class="swipehint" id="hint" data-testid="swipe-hint" role="note"><div class="hand">${ic("back")}${ic("back")}</div><p>Swipe left for the next card</p></div>`}</div>
+  <p class="mute" style="font-size:13px;text-align:center;margin-top:10px"><span class="xp" style="font-size:13px;padding:3px 10px">+${mode==='p2'?XP.p2:XP.read} XP</span> for finishing &middot; Pictures are made by AI</p></div></div>`;
+ const last=finale==='cliff'?cliff:fin;
+ ov.innerHTML=`<div class="screen"><div class="rd-top">${backBtn()}<div style="flex:1;min-width:0"><span class="eyebrow">Swipe &middot; ${tag}</span><div style="font-weight:800;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${title}</div></div><b class="mute" id="cnt" style="font-size:14px"></b></div>
+  <div class="car" id="car"><div class="track" id="track">${recapSlide}${slides}${last}</div>${S.hint?'':`<div class="swipehint" id="hint" data-testid="swipe-hint" role="note"><div class="hand">${ic("back")}${ic("back")}</div><p>Swipe left for the next card</p></div>`}</div>
   <div class="dots" id="dots" role="tablist" aria-label="Card progress">${[...Array(R.n)].map((_,k)=>`<i></i>`).join('')}</div>
   <p class="hint">Swipe left or right, or tap the sides</p>
   <div class="rd-foot"><button class="iconb" data-a="rprev" aria-label="Previous card">${ic('back')}</button><span class="cnt" id="cnt2"></span><button class="iconb" data-a="rnext" aria-label="Next card">${ic('next')}</button></div></div>`;
  rGo(R.i);setupCar();
 }
-const XP={read:20,listen:20};
 function rGo(i){
  i=Math.max(0,Math.min(R.n-1,i));if(i!==R.i&&!S.hint){S.hint=true;save();const h=$('#hint');if(h){h.classList.add('gone');setTimeout(()=>h.remove(),300)}}
  R.i=i;OV.i=i;
  const t=$('#track');if(!t)return;t.style.transform=`translateX(${-i*100}%)`;
- [...$('#dots').children].forEach((d,k)=>d.classList.toggle('on',k===i));
- const lbl=i<R.n-1?`${i+1} / ${R.n-1}`:'Takeaway';$('#cnt').textContent=lbl;$('#cnt2').textContent=lbl;
- if(i===R.n-1){const r=complete('read',R.s.id,XP.read);if(r.first){toast('Story read \u00b7 +'+XP.read+' XP');}if(r.newTrait)setTimeout(()=>showTrait(r.newTrait),700)}
+ const dots=$('#dots');if(dots)[...dots.children].forEach((d,k)=>d.classList.toggle('on',k===i));
+ const lastLbl=R.finale==='cliff'?'Cliffhanger':'Takeaway';
+ const lbl=i<R.n-1?`${i+1} / ${R.n-1}`:lastLbl;const c1=$('#cnt'),c2=$('#cnt2');if(c1)c1.textContent=lbl;if(c2)c2.textContent=lbl;
+ if(i===R.n-1 && !R.awarded){R.awarded=true;
+  if(R.mode==='p1'){S.kite=S.kite||{};const first=!S.kite.p1;S.kite.p1=true;const r=complete('read','s1-p1',XP.p1);if(r.first||first)toast('Part 1 done \u00b7 +'+XP.p1+' XP. Part 2 unlocks tomorrow.')}
+  else {if(R.s.id==='s1'){S.kite=S.kite||{};S.kite.p2=true;S.kite.p2ready=true}
+   const r=complete('read',R.s.id,R.mode==='p2'?XP.p2:XP.read);if(r.first)toast('Story read \u00b7 +'+(R.mode==='p2'?XP.p2:XP.read)+' XP');if(r.newTrait)setTimeout(()=>showTrait(r.newTrait),700)}}
 }
 function setupCar(){
  const car=$('#car'),tr=$('#track');let sx=0,dx=0,down=false,ok=false;
  car.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;down=true;ok=true;sx=e.clientX;dx=0;tr.classList.add('drag')});
- window.onpointermove=e=>{if(!down)return;dx=e.clientX-sx;tr.style.transform=`translateX(calc(${-R.i*100}% + ${dx}px))`};
+ window.onpointermove=e=>{if(!down||!OV||OV.type!=='reader'||!R)return;dx=e.clientX-sx;const tr=$('#track');if(!tr)return;tr.style.transform=`translateX(calc(${-R.i*100}% + ${dx}px))`};
  window.onpointerup=e=>{if(!down)return;down=false;tr.classList.remove('drag');
   if(Math.abs(dx)<8){const r=car.getBoundingClientRect(),x=(e.clientX-r.left)/r.width;
    if(R.i<R.n-1){rGo(x<.35?R.i-1:R.i+1)}else rGo(R.i)}
@@ -370,6 +571,7 @@ function pTotal(){return P.s.chapters.reduce((a,c)=>a+c.dur,0)}
 function pBefore(ch=P.ch){return P.s.chapters.slice(0,ch).reduce((a,c)=>a+c.dur,0)}
 function pLoad(ch,play,seek){
  if(P.eoc&&ch!==P.ch){P.eoc=false;P.timerLabel='Off'}
+ if(ch!==P.ch||play)P.held=false;
  P.ch=ch;A.src=P.s.chapters[ch].audio;A.defaultPlaybackRate=P.speed;A.playbackRate=P.speed;
  A.onloadedmetadata=()=>{A.playbackRate=P.speed;if(seek)A.currentTime=seek;};
  if(play){const pr=A.play();if(pr&&pr.catch)pr.catch(()=>{})}
@@ -377,13 +579,22 @@ function pLoad(ch,play,seek){
 }
 A.addEventListener('timeupdate',()=>{if(P){pUI()}});
 A.addEventListener('play',()=>pUI());A.addEventListener('pause',()=>pUI());
+function maybeEocPause(){
+ if(!P||!P.eoc)return false;
+ if(P.ch>=P.s.chapters.length-1){P.eoc=false;P.held=true;A.pause();pFinish();return true}
+ A.pause();P.eoc=false;P.held=true;P.timerLabel='Off';toast('Sleep timer: paused after this chapter');pUI();return true;
+}
+function nearEnd(){return A.duration>0&&A.currentTime>=A.duration-0.2}
+A.addEventListener('timeupdate',()=>{if(P&&P.eoc&&!A.paused&&nearEnd())maybeEocPause()});
+A.addEventListener('seeked',()=>{if(P&&P.eoc&&!A.paused&&nearEnd())maybeEocPause()});
 A.addEventListener('ended',()=>{
  if(!P)return;
  if(P.ch>=P.s.chapters.length-1){P.eoc=false;pFinish();return}
- if(P.eoc){P.eoc=false;P.timerLabel='Off';toast('Sleep timer: paused after this chapter');pUI();return}
+ if(P.eoc||P.held){P.eoc=false;P.held=true;A.pause();P.timerLabel='Off';pUI();return}
  pLoad(P.ch+1,true)
 });
 function pFinish(){
+ try{A.pause()}catch(e){}
  const r=complete('listen',P.s.id,XP.listen);pUI();
  if(r.first)toast('Story heard \u00b7 +'+XP.listen+' XP');
  openFinish(P.s,r);
@@ -395,7 +606,7 @@ function openFinish(s,r){
   <button class="bigcheck ${on?'ok':''}" data-a="listendone" data-id="${s.id}">${ic('check')}<span>${on?'Done \u2713':'Done'}</span></button>
   <div style="display:flex;gap:10px;margin-top:12px"><button class="btn ghost sm" data-a="share" data-id="${s.id}" style="flex:1">${ic('share')}Share</button><button class="btn sm" data-a="closesheet" style="flex:1">Close</button></div>`);
 }
-function pToggle(){if(A.paused){const pr=A.play();if(pr&&pr.catch)pr.catch(()=>{})}else A.pause()}
+function pToggle(){if(A.paused){if(P)P.held=false;const pr=A.play();if(pr&&pr.catch)pr.catch(()=>{})}else A.pause()}
 function pSeekTotal(t){
  let acc=0;const ch=P.s.chapters;
  for(let k=0;k<ch.length;k++){if(t<acc+ch[k].dur||k===ch.length-1){const off=Math.min(ch[k].dur-.3,t-acc);
@@ -506,6 +717,190 @@ function epDraw(){
  ov.innerHTML=`<div class="screen ep">${view}</div>`;
 }
 
+
+/* ---------- growth: games, league, recap, share ---------- */
+let FOCUS=null;
+function stopFocus(){if(FOCUS&&FOCUS.tm){clearInterval(FOCUS.tm);FOCUS.tm=null}if(FOCUS&&FOCUS.tick){clearInterval(FOCUS.tick);FOCUS.tick=null}}
+function playReward(game,score,xp,trait){
+ const d=S.daily[today()]=S.daily[today()]||{};
+ const first=!d.play;
+ d.play=game;
+ if(first)complete('play',game,xp);
+ else addXP(Math.max(3,Math.round(xp/3)));
+ if(trait&&grantTrait(trait))setTimeout(()=>showTrait(trait),500);
+ maybeGoal();save();
+}
+function renderTrap(){
+ const G=OV.g||(OV.g={i:0,score:0,locked:false,verdict:null});
+ const n=TRAP_CARDS.length,c=TRAP_CARDS[G.i];
+ if(G.i>=n){
+  const best=Math.max(S.best.trap||0,G.score);S.best.trap=best;save();
+  const perfect=G.score===n,trait=perfect?'shield':(G.score>=6?'honest':(G.score>=4?'patient':null));
+  const xp=perfect?25:(10+G.score);
+  if(!G.paid){G.paid=true;playReward('trap',G.score,xp,trait)}
+  ov.innerHTML=`<div class="screen"><div class="gwrap"><div style="display:flex;align-items:center;gap:10px">${backBtn()}<h1 class="h-title" style="font-size:22px;flex:1">Spot the Trap</h1></div>
+   <div class="card" style="margin-top:18px;text-align:center" data-testid="trap-end"><p class="eyebrow">Your score</p><h2 style="font-size:40px;margin:6px 0" data-testid="trap-score">${G.score} / ${n}</h2>
+   <p class="mute" style="font-size:16px;line-height:1.45">Best: ${best} / ${n}. ${perfect?'You caught every trap. That is a rare skill.':'A miss is practice. The same traps show up in real life.'}</p>
+   <p style="font-size:15px;margin-top:12px">A SIP is a small, regular investment. It does not promise profit. A real bank will not ask you to scan a QR code for a refund.</p></div>
+   <button class="btn" style="margin-top:auto" data-a="trap-again">Play again</button></div></div>`;
+  return;
+ }
+ const fb=G.verdict==null?'':`<div class="whybox ${G.verdict===c.ans?'fb-ok':'fb-no'}" data-testid="trap-why"><b>${G.verdict===c.ans?'Yes.':'Not this time.'}</b> ${c.why}</div>`;
+ ov.innerHTML=`<div class="screen"><div class="gwrap"><div style="display:flex;align-items:center;gap:10px">${backBtn()}<div style="flex:1"><span class="eyebrow">Spot the Trap \u00b7 ${G.i+1} of ${n}</span><div style="font-weight:800">Swipe Trap or Smart</div></div><b data-testid="trap-sofar">${G.score} right</b></div>
+  <div class="trap-card" id="trapcard"><div class="scene ${G.verdict==null?'':(G.verdict===c.ans?'flash-smart':'flash-trap')}" data-testid="trap-scene"><span class="valbadge">${c.value}</span><p class="mute" style="font-size:13px;margin:0 0 6px">${c.title}</p><h2 style="font-size:22px;line-height:1.3;margin:0">${c.scene}</h2>${fb}</div>
+  ${G.verdict==null?`<div class="trap-btns"><button class="btn trap" data-a="trap-ans" data-v="trap" data-testid="ans-trap">Trap</button><button class="btn smart" data-a="trap-ans" data-v="smart" data-testid="ans-smart">Smart</button></div>`:`<button class="btn" style="margin-top:14px" data-a="trap-next" data-testid="trap-next">${G.i===n-1?'See my score':'Next'}</button>`}
+  <p class="mute" style="font-size:13px;text-align:center;margin-top:10px">Swipe left for Trap, right for Smart \u00b7 or use the buttons</p></div></div></div>`;
+ if(G.verdict==null)setupTrapSwipe();
+}
+function setupTrapSwipe(){
+ const el=$('#trapcard');if(!el)return;
+ let sx=0,dx=0,down=false,sc=el.querySelector('.scene');
+ el.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;down=true;sx=e.clientX;dx=0});
+ const up=e=>{if(!down)return;down=false;if(Math.abs(dx)>60)trapAns(dx<0?'trap':'smart');else if(sc)sc.style.transform=''};
+ window.addEventListener('pointermove',e=>{if(!down)return;dx=e.clientX-sx;if(sc)sc.style.transform=`translateX(${dx*0.4}px) rotate(${dx*0.04}deg)`},{once:false});
+ el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);
+}
+function trapAns(v){
+ const G=OV.g;if(!G||G.verdict!=null)return;
+ const c=TRAP_CARDS[G.i];G.verdict=v;G.locked=true;
+ if(v===c.ans){G.score++;beep('ok')}else beep('bad');
+ renderTrap();
+}
+function trapNext(){const G=OV.g;G.i++;G.verdict=null;G.locked=false;renderTrap()}
+
+function renderFocus(){
+ const F=OV.f||(OV.f={t:30,left:30,score:0,wrong:0,focused:0,clean:0,running:false,over:false,spawned:0});
+ if(F.over){
+  const focused=Math.max(0,Math.min(30,Math.round(F.focused)));
+  S.best.focus=Math.max(S.best.focus||0,focused);save();
+  const trait=focused>=20?'focus':null;
+  if(!F.paid){F.paid=true;playReward('focus',focused,focused>=20?20:10,trait)}
+  ov.innerHTML=`<div class="screen"><div class="gwrap"><div style="display:flex;align-items:center;gap:10px">${backBtn()}<h1 class="h-title" style="font-size:22px;flex:1">Focus Tap</h1></div>
+   <div class="card focus-end" style="margin-top:18px;text-align:center" data-testid="focus-end">
+    <p class="eyebrow">You stayed focused</p><h2 data-testid="focus-seconds">${focused} seconds</h2>
+    <p class="mute" style="font-size:16px;line-height:1.45">You tapped ${F.score} study cues and ${F.wrong} pings. Best: ${S.best.focus}s.</p>
+    <p style="font-size:16px;line-height:1.45;margin-top:12px" data-testid="focus-take">A ping can wait. The next half hour of study belongs to you.</p></div>
+   <button class="btn" style="margin-top:auto" data-a="focus-again">Play again</button></div></div>`;
+  return;
+ }
+ ov.innerHTML=`<div class="screen"><div class="gwrap"><div style="display:flex;align-items:center;gap:10px">${backBtn()}<div style="flex:1"><span class="eyebrow">Focus Tap</span><div style="font-weight:800">Tap only study cues</div></div></div>
+  <div class="focus-hud"><span data-testid="focus-time">${F.left}s</span><span>Cues ${F.score}</span></div>
+  <div class="focus-stage" id="fstage" data-testid="focus-stage"><div class="focus-desk"></div><div class="focus-book"></div></div>
+  <p class="mute" style="font-size:14px;text-align:center">Ignore WhatsApp and Insta pings. Tap the yellow study cues.</p>
+  ${F.running?'':`<button class="btn" data-a="focus-start" data-testid="focus-start">Start 30 seconds</button>`}
+  </div></div>`;
+ if(F.running){/* stage was rebuilt; intervals keep spawning into #fstage */}
+}
+function startFocus(){
+ stopFocus();
+ OV.f={t:30,left:30,score:0,wrong:0,focused:0,clean:0,running:true,over:false,spawned:0,paid:false};
+ renderFocus();
+ const F=OV.f;
+ const cues=['Read the next line','Solve this sum','Highlight this note','One more paragraph','Check this formula','Write the heading'];
+ const pings=[
+  {k:'wa',t:'WhatsApp \u00b7 3 new in the group'},
+  {k:'ig',t:'Insta \u00b7 your story is expiring'},
+  {k:'ig',t:'Insta \u00b7 12 people liked this'},
+  {k:'yt',t:'YouTube \u00b7 a new Short'},
+  {k:'wa',t:'WhatsApp \u00b7 \u201cWhere are you??\u201d'}
+ ];
+ F.tick=setInterval(()=>{if(!OV||OV.type!=='focus'||!F.running)return stopFocus();
+  F.left=Math.max(0,F.left-1);if(F.clean>=0){F.clean++;F.focused=Math.max(F.focused,F.clean)}
+  const tm=$('[data-testid=focus-time]');if(tm)tm.textContent=F.left+'s';
+  if(F.left<=0){F.running=false;F.over=true;stopFocus();renderFocus()}
+ },1000);
+ const spawn=()=>{
+  if(!OV||OV.type!=='focus'||!F.running||F.left<=0)return;
+  const stage=$('#fstage');if(!stage)return;
+  const study=Math.random()<0.48;
+  const b=document.createElement('button');
+  if(study){b.className='ping study';b.textContent=cues[F.spawned%cues.length];b.dataset.k='study'}
+  else {const p=pings[F.spawned%pings.length];b.className='ping '+p.k;b.textContent=p.t;b.dataset.k='ping'}
+  F.spawned++;
+  b.style.left=(8+Math.random()*55)+'%';b.style.top=(8+Math.random()*58)+'%';
+  b.addEventListener('click',e=>{e.stopPropagation();
+   if(b.dataset.k==='study'){F.score++;beep('ok');b.remove()}
+   else {F.wrong++;F.clean=0;beep('bad');b.classList.add('miss');setTimeout(()=>b.remove(),280)}
+  });
+  stage.appendChild(b);
+  setTimeout(()=>{if(b.parentNode)b.remove()},1400);
+ };
+ F.tm=setInterval(spawn,850);
+ setTimeout(spawn,300);
+}
+
+function renderLeague(){
+ const board=leagueBoard(),tier=leagueTier(S.weekXp||0);
+ const rows=board.map((p,i)=>`<div class="league-row ${p.me?'me':''}" ${p.me?'data-testid="league-me"':''}><span class="rk">${i+1}</span><div style="flex:1">${p.name}${p.me?'':` <span class="sampletag">Sample</span>`}</div><b>${p.xp} XP</b></div>`).join('');
+ ov.innerHTML=`<div class="screen"><div class="gwrap">${backBtn()}
+  <h1 class="h-title" style="margin-top:8px">Weekly league</h1>
+  <p class="mute" style="font-size:15px;line-height:1.45;margin:6px 0 14px">You are in <span class="tier ${tier}">${tier}</span> this week. Actions and stories move you up. All other names are sample players, not real people.</p>
+  <div class="card" style="padding:8px 10px" data-testid="league-board"><p class="sampletag" style="margin:8px 8px 0">Sample players</p>${rows}</div>
+  <div class="card friendrow" style="margin-top:14px"><span class="avmini">${avatar({g:'girl',skin:SKIN[2],hoodie:HOOD[3]},'avatar avmini')}</span><div><span class="sampletag">Sample friend</span><h3 style="margin:4px 0 0;font-size:16px">${SAMPLE_FRIEND.name} \u00b7 ${SAMPLE_FRIEND.streak}-day streak</h3><p class="mute" style="font-size:13px;margin:2px 0 0">Demo only. Not a real person.</p></div></div>
+ </div></div>`;
+}
+function renderRecap(){
+ const w=weekObj(),st=streaks(),newT=(w.traits||[]).filter(k=>visTraits().includes(k));
+ ov.innerHTML=`<div class="screen"><div class="gwrap recap">${backBtn()}
+  <p class="eyebrow">This week</p><h2 data-testid="recap-title">You grew.</h2>
+  <p class="mute" style="font-size:16px;line-height:1.45">A look at what you actually did. No fake scores from other users.</p>
+  <div class="stat"><div><b data-testid="recap-stories">${w.stories||0}</b><span>Stories</span></div><div><b>${w.listens||0}</b><span>Listens</span></div><div><b>${w.actions||0}</b><span>Actions</span></div></div>
+  <div class="stat"><div><b>${w.plays||0}</b><span>Games</span></div><div><b>${w.xp||0}</b><span>XP this week</span></div><div><b>${st.cur}</b><span>Streak</span></div></div>
+  ${newT.length?`<p class="sec-t">New trait cards</p><div class="tgrid">${newT.map(k=>traitCard(k,true)).join('')}</div>`:'<p class="mute" style="margin-top:16px">Finish a story or a game this week to grow the set.</p>'}
+  <button class="btn ghost" style="margin-top:auto" data-a="sharecard">${ic('share')}Share a card</button>
+ </div></div>`;
+}
+function renderShare(){
+ ov.innerHTML=`<div class="screen"><div class="gwrap">${backBtn()}
+  <h1 class="h-title" style="font-size:24px">Share card</h1>
+  <p class="mute" style="font-size:15px;margin:6px 0 12px">A picture for an Instagram story. Nothing is posted unless you share it yourself.</p>
+  <img class="shareprev" id="shareprev" data-testid="share-img" alt="Share preview">
+  <a class="btn" id="sharedl" data-testid="share-download" download="ethossai-streak.png" style="margin-top:14px;text-decoration:none">${ic('download')}Download image</a>
+ </div></div>`;
+ buildShareImage().then(({url})=>{
+  const img=$('#shareprev'),a=$('#sharedl');if(img)img.src=url;if(a)a.href=url;
+ }).catch(()=>toast('Could not make the image'));
+}
+function buildShareImage(){
+ return new Promise(res=>{
+  const c=document.createElement('canvas');c.width=1080;c.height=1920;const x=c.getContext('2d');
+  const g=x.createLinearGradient(0,0,0,1920);g.addColorStop(0,'#0B1A3A');g.addColorStop(1,'#1a2a4f');x.fillStyle=g;x.fillRect(0,0,1080,1920);
+  x.fillStyle='#F2B544';x.font='800 36px system-ui,sans-serif';x.fillText('EthosSAI  \u00b7  DEMO',80,140);
+  const st=streaks(),l=level();
+  x.fillStyle='#F2B544';x.beginPath();x.moveTo(540,430);x.bezierCurveTo(640,300,780,520,540,780);x.bezierCurveTo(300,520,440,300,540,430);x.fill();
+  x.fillStyle='#f3ead6';x.font='800 96px system-ui,sans-serif';x.textAlign='center';
+  x.fillText(st.cur+'-day streak',540,920);
+  x.font='700 42px system-ui,sans-serif';x.fillStyle='#FFE7AE';
+  x.fillText((S.name||'You')+' \u00b7 '+l.n,540,1000);
+  const owned=visTraits().filter(k=>S.traits[k]);
+  x.fillStyle='#f3ead6';x.font='600 34px system-ui,sans-serif';
+  x.fillText(owned.length?('Latest: '+(TRAITS[owned[owned.length-1]]||{}).name):'One small action a day.',540,1120);
+  x.font='600 28px system-ui,sans-serif';x.fillStyle='#aeb6c8';
+  x.fillText('A swipeable story. Then you\u2019re done for today.',540,1720);
+  x.fillText('Sample card \u00b7 not a real rank',540,1780);
+  c.toBlob(b=>{const url=URL.createObjectURL(b);res({url,canvas:c})},'image/png');
+ });
+}
+function openMystery(){
+ const day=today(),m=mysteryFor(day);
+ const first=!m.opened;m.opened=true;save();
+ if(first){addXP(m.xp);if(m.trait&&grantTrait(m.trait))setTimeout(()=>showTrait(m.trait),500);maybeGoal()}
+ const body=m.trait?`${traitCard(m.trait,true,true)}<p class="mute" style="text-align:center;margin-top:8px">+${m.xp} XP</p>`:`<h3 style="font-size:22px;line-height:1.35;margin:8px 0 12px">${m.text}</h3><p class="xp">+${m.xp} XP</p>`;
+ openSheet(`<p class="eyebrow" style="text-align:center">Mystery card</p><div data-testid="mystery-reveal">${body}</div><p class="mute" style="font-size:14px;margin-top:12px">${m.text&&m.trait?m.text:''}</p><button class="btn" style="margin-top:14px" data-a="closesheet" data-testid="mystery-ok">Nice</button>`);
+}
+function nextDay(){
+ const d=today(),g=goalOf(d),st=streaks();
+ if(!g.done && st.cur>0){
+  if((S.freeze||0)>0){S.freeze--;const rec=S.daily[d]=S.daily[d]||{};rec.frozen=true;rec.goal=true;if(!S.traits.comeback)grantTrait('comeback');toast('Streak freeze used. Your streak is safe.');}
+ }
+ if(S.kite&&S.kite.p1&&!S.kite.p2)S.kite.p2ready=true;
+ const showRecap=((S.offset+1)%7===0)&&S.offset>0;
+ if((S.offset-(S.weekStart||0))>=7){S.week={xp:0,stories:0,listens:0,actions:0,plays:0,traits:[]};S.weekXp=0;S.weekStart=S.offset+1}
+ S.offset++;S.demoHour=null;save();
+ if(showRecap){openOverlay({type:'recap'});toast('A new week. Here is your recap.')}
+ else{render();toast('Simulated: next day')}
+}
+
 /* ---------- share ---------- */
 async function share(id){
  const s=STORIES.find(x=>x.id===id)||R&&R.s||P&&P.s;
@@ -560,7 +955,21 @@ document.addEventListener('click',e=>{
  case'epSmall':{E.small=!E.small;const ep=E.ep;$('#ep-act').textContent=E.small?ep.small:ep.action;b.textContent=E.small?'Back to the full step':'Want a smaller step?';break}
  case'epdone':{const ep=E.ep;if(doAction('act:watch:'+ep.id)){b.classList.add('ok');b.querySelector('span').textContent='Done \u2713'}break}
  case'eptry':{const ep=E.ep,np=1-E.pick;E={ep,step:ep.act1.length+1,pick:np,replay:true};epDraw();break}
- case'nextday':S.offset++;save();render();toast('Simulated: next day');break;
+ case'nextday':nextDay();break;
+ case'ninepm':S.demoHour=(S.demoHour>=21?null:21);save();render();break;
+ case'scrollstreak':tab='today';closeOverlay(true);render();setTimeout(()=>{const e=$('#streakhero');if(e)e.scrollIntoView({block:'start'})},50);break;
+ case'mystery':openMystery();break;
+ case'trap':openOverlay({type:'trap'});break;
+ case'trap-ans':trapAns(v);break;
+ case'trap-next':trapNext();break;
+ case'trap-again':OV.g={i:0,score:0,locked:false,verdict:null};renderTrap();break;
+ case'focus':openOverlay({type:'focus'});break;
+ case'focus-start':startFocus();break;
+ case'focus-again':stopFocus();OV.f=null;renderFocus();break;
+ case'league':openOverlay({type:'league'});break;
+ case'recap':openOverlay({type:'recap'});break;
+ case'sharecard':openOverlay({type:'share'});break;
+ case'togglesound':S.sound=!S.sound;save();render();break;
  case'reset':if(confirm('Reset all demo data on this device?')){A.pause();P=null;A.removeAttribute('src');S=fresh();OB={step:0};save();tab='today';closeOverlay(true);render()}break;
  }
 });
@@ -575,5 +984,9 @@ document.addEventListener('input',e=>{
 
 render();
 // service worker not used; keep the demo simple
-window.__ethos={get state(){return S},audio:A,get player(){return P}};
+window.__ethos={get state(){return S},audio:A,get player(){return P},complete,doAction,nextDay,goalOf,today,addXP,grantTrait,
+ finishFocus(secs){if(!OV||OV.type!=='focus'||!OV.f)return false;stopFocus();OV.f.focused=secs;OV.f.running=false;OV.f.over=true;renderFocus();return true},
+ finishListen(){if(P)pFinish()},
+ dismiss(){pendingLevel=null;sheet.classList.remove('show');sheet.innerHTML=''},
+ nudgeEoc(){return maybeEocPause()}};
 })();
